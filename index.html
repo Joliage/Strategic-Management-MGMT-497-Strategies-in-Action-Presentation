@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strategies in Action — MGMT 497 Assignment 10 (Coca-Cola)</title>
+<style>
+:root{
+  --bee:#FCE205; --bee-deep:#F2B600; --bee-soft:#FFF3AE; --bee-pale:#FFFBEA;
+  --ink:#15140F; --char:#23211A; --char2:#322F25;
+  --cream:#FFFDF5; --cream2:#FBF4DD; --panel:#FFFFFF;
+  --line:#E8DFC2; --line2:#D8CD9F;
+  --text:#211F17; --muted:#6E664F; --soft:#948B6B;
+  --coke:#D2122E; --good:#2E7D32; --bad:#C62828; --info:#1565C0;
+  --radius:14px; --shadow:0 16px 44px rgba(30,26,8,.14);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#0E0D0A;}
+button{font:inherit;color:inherit}
+#stage{position:fixed;inset:0;display:grid;place-items:center;
+  background:radial-gradient(1100px 680px at 14% -12%, #2c2a20 0%, transparent 60%),
+             radial-gradient(900px 600px at 112% 118%, #2a2820 0%, transparent 55%), #100F0B;}
+#deck{position:relative;width:1280px;height:720px;transform-origin:center center;
+  background:var(--cream);border-radius:18px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.55);}
+
+/* ---------- slide system ---------- */
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:44px 60px 66px;background:var(--cream);color:var(--text)}
+.slide.active{display:flex;animation:fade .42s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.slide--dark{background:var(--ink);color:var(--bee-pale)}
+.slide--dark .s-title{color:#fff}
+.slide--dark .s-sub{color:#cbc3a6}
+
+.s-head{flex:0 0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--ink);background:var(--bee);padding:5px 12px;border-radius:999px;border:1px solid var(--bee-deep)}
+.s-title{font-size:36px;line-height:1.05;font-weight:800;letter-spacing:-.02em;margin:11px 0 0;color:var(--ink)}
+.s-sub{font-size:15.5px;color:var(--muted);margin:7px 0 0;max-width:70ch;line-height:1.45}
+.s-num{font-size:12px;font-weight:800;color:var(--soft);white-space:nowrap;letter-spacing:.04em}
+.s-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:14px}
+
+/* ---------- text bits ---------- */
+.lead{font-size:18px;line-height:1.5;color:var(--text)}
+.lead strong{color:var(--ink)}
+.muted{color:var(--muted)}
+.tiny{font-size:12.5px;color:var(--soft)}
+.hl{background:linear-gradient(180deg,transparent 58%,var(--bee) 58%);padding:0 2px;font-weight:700;color:var(--ink)}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);margin:0 0 6px}
+
+.blist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.blist li{position:relative;padding-left:28px;font-size:15.5px;line-height:1.4;color:var(--text)}
+.blist li::before{content:"";position:absolute;left:5px;top:7px;width:9px;height:9px;background:var(--bee);border:2px solid var(--ink);border-radius:50%}
+.blist.tight li{font-size:14px;gap:6px}
+.nlist{list-style:none;margin:0;padding:0;counter-reset:n;display:flex;flex-direction:column;gap:8px}
+.nlist li{position:relative;padding-left:34px;font-size:14.5px;line-height:1.38;color:var(--text);counter-increment:n}
+.nlist li::before{content:counter(n);position:absolute;left:0;top:0;width:23px;height:23px;background:var(--ink);color:var(--bee);font-weight:800;font-size:12px;border-radius:7px;display:grid;place-items:center}
+
+/* ---------- cards / layout ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.card--bee{background:var(--bee-soft);border-color:var(--bee-deep)}
+.card--ink{background:var(--char);border-color:#403c2e;color:var(--bee-pale)}
+.card--ink h4{color:#fff}
+.card h4{margin:0 0 8px;font-size:15px;color:var(--ink);font-weight:800;letter-spacing:-.01em}
+.card.pad-sm{padding:12px 14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.row{display:flex;gap:14px}
+.col{display:flex;flex-direction:column;gap:14px}
+.fill{flex:1 1 auto;min-height:0}
+.scroll{overflow:auto}
+.center{display:grid;place-items:center;text-align:center}
+
+/* ---------- chips / pills ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--cream2);border:1px solid var(--line2);color:var(--char)}
+.chip--bee{background:var(--bee);border-color:var(--bee-deep);color:var(--ink)}
+.chip--coke{background:var(--coke);border-color:#a50e24;color:#fff}
+.chip--ghost{background:transparent}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:30px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.02em}
+.stat span{font-size:12.5px;color:var(--muted)}
+.badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:6px;background:var(--ink);color:var(--bee)}
+
+/* ---------- buttons / tools ---------- */
+.btn{appearance:none;border:1px solid var(--line2);background:var(--panel);color:var(--ink);font-weight:700;font-size:13.5px;padding:8px 13px;border-radius:10px;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:hover{background:var(--bee-soft);border-color:var(--bee-deep)}
+.btn--primary{background:var(--bee);border-color:var(--bee-deep)}
+.btn--primary:hover{background:var(--bee-deep)}
+.btn.is-active{background:var(--ink);color:var(--bee);border-color:var(--ink)}
+.btn:disabled{opacity:.42;cursor:default;background:var(--panel);border-color:var(--line2)}
+.btn-sm{padding:6px 10px;font-size:12.5px}
+
+.tool{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:11px;background:linear-gradient(180deg,#fffdf3,#faf2d6);border:1px solid var(--line2);border-radius:16px;padding:14px 16px}
+.tool-hint{flex:0 0 auto;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.tool-hint .badge{padding:2px 8px;font-size:10px}
+.toolwrap{flex:1 1 auto;min-height:0;display:flex;gap:14px}
+.tabrow{display:flex;flex-wrap:wrap;gap:8px}
+
+.scorecard{display:flex;flex-direction:column;gap:0}
+.sc-row{display:flex;align-items:flex-start;gap:10px;padding:7px 2px;border-bottom:1px dashed var(--line)}
+.sc-mark{width:21px;height:21px;border-radius:6px;display:grid;place-items:center;font-weight:800;font-size:12px;color:#fff;flex:0 0 auto;margin-top:1px}
+.sc-mark.ok{background:var(--good)} .sc-mark.no{background:var(--bad)} .sc-mark.warn{background:var(--bee-deep);color:var(--ink)}
+.sc-row b{font-size:13.5px;color:var(--ink)} .sc-row p{margin:1px 0 0;font-size:12.5px;color:var(--muted)}
+.meter{height:14px;background:var(--cream2);border:1px solid var(--line2);border-radius:999px;overflow:hidden}
+.meter-fill{height:100%;background:linear-gradient(90deg,var(--bee),var(--bee-deep));width:0;transition:width .4s}
+.tog{cursor:pointer;user-select:none}
+.tog.on{background:var(--bee);border-color:var(--bee-deep);color:var(--ink)}
+
+.xcard{cursor:pointer;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 11px;transition:.14s;font-family:inherit}
+.xcard:hover{border-color:var(--bee-deep);background:var(--bee-soft);transform:translateY(-2px)}
+.xcard.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bee);background:var(--bee-soft)}
+.xcard .xt{font-weight:800;font-size:13.5px;color:var(--ink);display:block}
+.xcard .xc{font-size:11px;color:var(--muted)}
+
+.opt{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;margin:0;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink);transition:.12s;font-family:inherit}
+.opt:hover{background:var(--bee-soft);border-color:var(--bee-deep)}
+.opt:disabled{cursor:default}
+.opt.correct{background:#E7F4E8;border-color:var(--good);color:#1b5e20}
+.opt.wrong{background:#FBE9E9;border-color:var(--bad);color:#9e1414}
+.opt.dim{opacity:.55}
+.fb{font-size:13.5px;line-height:1.4;padding:10px 13px;border-radius:10px;border:1px solid var(--line2);background:var(--cream2)}
+.fb.good{background:#E7F4E8;border-color:#9cc79f} .fb.bad{background:#FBE9E9;border-color:#e0a3a3}
+.progbar{height:8px;background:var(--cream2);border:1px solid var(--line2);border-radius:999px;overflow:hidden;flex:1 1 auto}
+.progbar > i{display:block;height:100%;background:var(--bee-deep);width:0;transition:.3s}
+
+/* ranking */
+.rankrow{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line2);border-radius:11px;padding:8px 10px;margin-bottom:7px}
+.rankrow .rk{width:26px;height:26px;border-radius:7px;background:var(--ink);color:var(--bee);font-weight:800;display:grid;place-items:center;font-size:13px;flex:0 0 auto}
+.rankrow .rl{flex:1 1 auto;font-size:13px;line-height:1.3}
+.rankrow .rl b{color:var(--ink)}
+.rankrow .rmove{display:flex;flex-direction:column;gap:3px}
+.rankrow .rmove button{width:24px;height:18px;border-radius:5px;border:1px solid var(--line2);background:var(--cream2);cursor:pointer;font-size:11px;line-height:1;display:grid;place-items:center}
+.rankrow .rmove button:hover{background:var(--bee);border-color:var(--bee-deep)}
+.rankrow .rdelta{font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;min-width:54px;text-align:center}
+
+/* value chain */
+.vcchain{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap}
+.vcseg{flex:1 1 0;cursor:pointer;background:var(--panel);border:1px solid var(--line);padding:9px 8px;text-align:center;transition:.14s;position:relative}
+.vcseg:first-child{border-radius:11px 0 0 11px}.vcseg:last-child{border-radius:0 11px 11px 0}
+.vcseg+.vcseg{border-left:none}
+.vcseg:hover{background:var(--bee-soft)}
+.vcseg.sel{background:var(--bee);border-color:var(--bee-deep);z-index:2}
+.vcseg .vi{font-size:18px;line-height:1}
+.vcseg .vn{font-size:11.5px;font-weight:800;color:var(--ink);margin-top:3px;line-height:1.15}
+
+/* porter matrix */
+.pmx{display:grid;grid-template-columns:96px 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:8px;flex:1 1 auto;min-height:0}
+.pmx .pcorner{display:grid;place-items:center}
+.pmx .phead{display:grid;place-items:center;background:var(--ink);color:var(--bee);font-weight:800;font-size:13px;border-radius:9px;text-align:center;padding:6px}
+.pmx .pside{display:grid;place-items:center;background:var(--char);color:var(--bee);font-weight:800;font-size:13px;border-radius:9px;writing-mode:vertical-rl;transform:rotate(180deg)}
+.pcell{cursor:pointer;background:var(--panel);border:1px solid var(--line2);border-radius:11px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;transition:.14s}
+.pcell:hover{border-color:var(--bee-deep);background:var(--bee-soft)}
+.pcell.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bee)}
+.pcell .ptype{font-weight:800;font-size:14px;color:var(--ink)}
+.pcell .pcos{font-size:11.5px;color:var(--muted)}
+.pcell .pco{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
+.pco .chip{font-size:10.5px;padding:2px 7px}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--ink);color:var(--bee);text-align:left;padding:8px 11px;font-weight:800;font-size:12px;letter-spacing:.03em}
+.tbl td{padding:8px 11px;border-bottom:1px solid var(--line);color:var(--text);vertical-align:top}
+.tbl tr:nth-child(even) td{background:var(--cream2)}
+.tbl td b{color:var(--ink)}
+.tbl .tnum{font-weight:800;color:var(--coke)}
+
+canvas{display:block;max-width:100%}
+
+/* ---------- title slide ---------- */
+.title-wrap{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:18px;position:relative}
+.title-eyebrow{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:var(--bee);padding:7px 15px;border-radius:999px}
+.title-main{font-size:92px;line-height:.92;font-weight:800;letter-spacing:-.03em;color:#fff;margin:0}
+.title-main em{font-style:normal;color:var(--bee);display:block}
+.title-sub{font-size:20px;color:#d8d0b2;max-width:64ch;line-height:1.45;margin:0}
+.title-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.title-meta .chip{background:#26241c;border-color:#403c2e;color:#e9e2c6;font-size:13px;padding:6px 12px}
+.title-meta .chip b{color:var(--bee)}
+.bee-deco{position:absolute;right:-10px;top:50%;transform:translateY(-50%);width:230px;height:230px;opacity:.92;pointer-events:none}
+
+/* ---------- section divider ---------- */
+.sec-num{font-size:120px;font-weight:800;color:var(--bee);line-height:.8;letter-spacing:-.04em}
+.sec-name{font-size:48px;font-weight:800;color:#fff;letter-spacing:-.02em;margin:6px 0 0}
+.sec-desc{font-size:18px;color:#cbc3a6;max-width:62ch;margin:12px 0 0;line-height:1.45}
+
+/* ---------- chrome ---------- */
+.stripes{height:9px;background:repeating-linear-gradient(135deg,var(--ink) 0 16px,var(--bee) 16px 32px)}
+.deck-foot{position:absolute;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--ink);z-index:30}
+.foot-left{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:600;color:#cdc6ac}
+.foot-brand{display:flex;align-items:center;gap:7px;font-weight:800;color:var(--bee);letter-spacing:.02em}
+.foot-dot{width:12px;height:12px;border-radius:3px;background:var(--bee);position:relative}
+.foot-sec{color:#e9e2c6;font-weight:700;font-size:12px;border-left:1px solid #3a382c;padding-left:12px}
+.foot-right{display:flex;align-items:center;gap:9px}
+.navbtn{appearance:none;width:30px;height:30px;border-radius:8px;border:1px solid #3a382c;background:#2a281f;color:var(--bee);font-size:15px;cursor:pointer;display:grid;place-items:center;transition:.13s}
+.navbtn:hover{background:var(--bee);color:var(--ink)}
+.counter{font-variant-numeric:tabular-nums;font-size:12px;color:#cdc6ac;min-width:50px;text-align:center}
+.progress{position:absolute;left:0;top:0;height:4px;background:var(--bee);z-index:31;transition:width .3s;width:0}
+
+/* ---------- menu ---------- */
+.menu{position:absolute;inset:0;background:rgba(16,15,11,.93);z-index:40;display:none;padding:34px 50px}
+.menu.open{display:block}
+.menu h2{color:var(--bee);margin:0;font-size:24px;letter-spacing:-.01em}
+.menu .msubtitle{color:#cbc3a6;font-size:13px;margin:3px 0 16px}
+.menu-cols{column-count:3;column-gap:26px}
+.mgroup{break-inside:avoid;margin-bottom:12px}
+.msec{color:var(--bee);font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-size:11px;margin:0 0 4px;border-bottom:1px solid #3a382c;padding-bottom:3px}
+.mitem{display:block;width:100%;text-align:left;color:#f1ead0;background:transparent;border:none;border-radius:7px;padding:4px 8px;font-size:13px;cursor:pointer;line-height:1.25}
+.mitem:hover{background:rgba(252,226,5,.16);color:#fff}
+.mitem b{color:var(--bee);font-weight:800;margin-right:6px;font-variant-numeric:tabular-nums}
+.mitem .tflag{color:var(--bee);font-size:10px;font-weight:800;margin-left:5px}
+.mclose{position:absolute;top:26px;right:30px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="deck">
+    <div class="progress" id="progress"></div>
+
+    <!-- ============ 1 · TITLE ============ -->
+    <section class="slide slide--dark active" data-section="Intro" data-title="Strategies in Action — Title">
+      <div class="stripes" style="position:absolute;left:0;right:0;top:0"></div>
+      <div class="title-wrap">
+        <span class="title-eyebrow">🐝 MGMT 497 · Strategic Management</span>
+        <h1 class="title-main">Strategies<em>in Action</em></h1>
+        <p class="title-sub">A live, click-through tour of Chapter 5 and Assignment 10 — the 11 strategy types, value chain analysis, Porter's generic strategies, and build-borrow-buy — applied throughout to the <strong style="color:#fff">Coca-Cola Company</strong> cohesion case.</p>
+        <div class="title-meta">
+          <span class="chip"><b>Chapter&nbsp;5</b>&nbsp;Strategies in Action</span>
+          <span class="chip"><b>Assignment&nbsp;10</b>&nbsp;Understanding strategies</span>
+          <span class="chip"><b>Case</b>&nbsp;Coca-Cola Company, 2018</span>
+          <span class="chip"><b>By</b>&nbsp;Naomie Bambara</span>
+        </div>
+      </div>
+      <svg class="bee-deco" viewBox="0 0 200 200" aria-hidden="true">
+        <ellipse cx="100" cy="118" rx="58" ry="44" fill="#FCE205" stroke="#15140F" stroke-width="6"/>
+        <path d="M70 84 Q100 74 130 84 L130 152 Q100 162 70 152 Z" fill="none"/>
+        <path d="M76 96 Q100 90 124 96" stroke="#15140F" stroke-width="8" fill="none"/>
+        <path d="M70 118 Q100 113 130 118" stroke="#15140F" stroke-width="8" fill="none"/>
+        <path d="M75 140 Q100 136 125 140" stroke="#15140F" stroke-width="8" fill="none"/>
+        <circle cx="100" cy="62" r="18" fill="#15140F"/>
+        <ellipse cx="58" cy="70" rx="34" ry="20" fill="#fff" stroke="#15140F" stroke-width="5" opacity=".9" transform="rotate(-24 58 70)"/>
+        <ellipse cx="142" cy="70" rx="34" ry="20" fill="#fff" stroke="#15140F" stroke-width="5" opacity=".9" transform="rotate(24 142 70)"/>
+        <line x1="92" y1="48" x2="84" y2="32" stroke="#15140F" stroke-width="4"/><circle cx="83" cy="30" r="4" fill="#15140F"/>
+        <line x1="108" y1="48" x2="116" y2="32" stroke="#15140F" stroke-width="4"/><circle cx="117" cy="30" r="4" fill="#15140F"/>
+      </svg>
+    </section>
+
+    <!-- ============ 2 · HOW TO USE ============ -->
+    <section class="slide" data-section="Intro" data-title="How to use this deck">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Start here</span><h2 class="s-title">A presentation you can actually click</h2>
+        <p class="s-sub">This deck is built like the live transformer demo we used as a model — every concept has a hands-on tool. Nothing to install; it runs straight from the file.</p></div>
+        <div class="s-num">02 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>Move through the deck</h4>
+            <ul class="blist tight">
+              <li><b>→ / Space / Page&nbsp;Down</b> — next slide</li>
+              <li><b>← / Page&nbsp;Up</b> — previous slide</li>
+              <li><b>Home / End</b> — jump to first or last slide</li>
+              <li>Use the <b>arrows</b> in the footer, or the <b>Slides</b> menu (top-right) to jump anywhere</li>
+            </ul>
+          </div>
+          <div class="card card--bee"><h4>Use the 10 built-in tools</h4>
+            <p style="margin:0 0 8px;font-size:14px;line-height:1.45">Watch for the <span class="badge">tool</span> badge. Each one is loaded with real Coca-Cola data. Click cards, sort lists, answer questions, switch chart tabs — no coding or tech background needed.</p>
+            <div class="chiprow">
+              <span class="chip">Strategy Explorer</span><span class="chip">Classifier Game</span>
+              <span class="chip">Value Chain</span><span class="chip">Porter Matrix</span>
+              <span class="chip">Financial Dashboard</span><span class="chip">Mastery Quiz</span>
+            </div>
+          </div>
+        </div>
+        <div class="card pad-sm" style="display:flex;align-items:center;gap:14px">
+          <span class="badge">covers</span>
+          <span style="font-size:13.5px;color:var(--muted)">The entire Chapter 5 ("Strategies in Action") and all of Assignment 10 — Question 1 (strategy types vs. actual strategies) and Question 2 (eleven hypothetical Coca-Cola strategies).</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 · LEARNING OBJECTIVES ============ -->
+    <section class="slide" data-section="Intro" data-title="Chapter 5 learning objectives">
+      <div class="s-head">
+        <div><span class="kicker">Chapter 5 · Roadmap</span><h2 class="s-title">Eleven learning objectives</h2>
+        <p class="s-sub">After this chapter you can identify and apply every major strategy a firm can pursue — and judge when each one fits.</p></div>
+        <div class="s-num">03 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill" style="align-content:start">
+          <ul class="nlist">
+            <li>Identify 5 characteristics and 10 benefits of clear objectives</li>
+            <li>Define and give an example of the 11 types of strategies</li>
+            <li>Discuss the three integration strategies</li>
+            <li>Know when market penetration, development &amp; product development work</li>
+            <li>Explain when diversification is effective</li>
+            <li>List when retrenchment, divestiture &amp; liquidation fit</li>
+          </ul>
+          <ul class="nlist" style="counter-reset:n 6">
+            <li>Explain value chain analysis and benchmarking</li>
+            <li>Discuss Porter's two generic strategies: cost leadership &amp; differentiation</li>
+            <li>Compare build, borrow, or buy as ways to grow</li>
+            <li>Discuss first-mover advantages and disadvantages</li>
+            <li>Explain strategic planning in for-profit, nonprofit &amp; small firms</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 · LONG-TERM OBJECTIVES ============ -->
+    <section class="slide" data-section="Long-Term Objectives" data-title="Long-term objectives">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.1 · Objectives</span><h2 class="s-title">Objectives come before strategies</h2>
+        <p class="s-sub">Long-term objectives are the results expected from pursuing certain strategies; strategies are the actions taken to reach them.</p></div>
+        <div class="s-num">04 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="col" style="flex:1.3">
+            <div class="card"><h4>What they are</h4>
+              <p class="lead" style="font-size:15.5px;margin:0">Without long-term objectives, an organization drifts toward an unknown end or chases short-term fads and strays from its mission. The time frame for objectives and strategies should match — usually <span class="hl">2 to 5 years</span>.</p>
+            </div>
+            <div class="card card--ink"><h4>Common ways objectives are stated</h4>
+              <div class="chiprow">
+                <span class="chip chip--bee">Growth in assets</span><span class="chip chip--bee">Growth in sales</span>
+                <span class="chip chip--bee">Profitability</span><span class="chip chip--bee">Market share</span>
+                <span class="chip chip--bee">Diversification</span><span class="chip chip--bee">Vertical integration</span>
+                <span class="chip chip--bee">Earnings per share</span><span class="chip chip--bee">Social responsibility</span>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
+            <div class="stat"><b>2–5 yrs</b><span>Typical horizon for objectives &amp; strategies</span></div>
+            <div style="height:1px;background:var(--line)"></div>
+            <div class="stat"><b style="color:var(--coke)">5%</b><span>Annual revenue &amp; profit growth Coca-Cola shareholders expect — not declines</span></div>
+            <div style="height:1px;background:var(--line)"></div>
+            <p class="tiny" style="margin:0">"Success rarely occurs by accident; it is the result of hard work directed toward achieving certain objectives."</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 · 5 CHARACTERISTICS ============ -->
+    <section class="slide" data-section="Long-Term Objectives" data-title="Five characteristics of objectives">
+      <div class="s-head">
+        <div><span class="kicker">Table 5-1</span><h2 class="s-title">Five characteristics of good objectives</h2>
+        <p class="s-sub">Every objective should also carry a timeline. Miss any of these and the objective becomes useless for planning.</p></div>
+        <div class="s-num">05 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:center">
+          <div class="card center"><div class="badge">1</div><h4 style="margin-top:8px">Quantitative</h4><p class="muted" style="font-size:13.5px;margin:0">Measurable — attach a number</p></div>
+          <div class="card center"><div class="badge">2</div><h4 style="margin-top:8px">Understandable</h4><p class="muted" style="font-size:13.5px;margin:0">Clear to everyone</p></div>
+          <div class="card center"><div class="badge">3</div><h4 style="margin-top:8px">Challenging</h4><p class="muted" style="font-size:13.5px;margin:0">A stretch, yet achievable</p></div>
+          <div class="card center"><div class="badge">4</div><h4 style="margin-top:8px">Compatible</h4><p class="muted" style="font-size:13.5px;margin:0">Consistent up &amp; across the chain of command</p></div>
+          <div class="card center"><div class="badge">5</div><h4 style="margin-top:8px">Obtainable</h4><p class="muted" style="font-size:13.5px;margin:0">Realistic</p></div>
+          <div class="card card--bee center"><h4 style="margin:0">⚠ Avoid vagueness</h4><p style="font-size:13px;margin:6px 0 0;color:var(--char)">Macy's "grow sales profitably" is useless in planning — it fails almost every test above.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 · 10 BENEFITS ============ -->
+    <section class="slide" data-section="Long-Term Objectives" data-title="Ten benefits of clear objectives">
+      <div class="s-head">
+        <div><span class="kicker">Table 5-2</span><h2 class="s-title">Ten benefits of clear objectives</h2>
+        <p class="s-sub">Objectives serve as standards by which individuals, groups, departments, and whole organizations are evaluated.</p></div>
+        <div class="s-num">06 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill" style="align-content:start">
+          <ul class="nlist">
+            <li>Provide direction by revealing expectations</li>
+            <li>Allow synergy</li>
+            <li>Assist in evaluation by serving as standards</li>
+            <li>Establish priorities</li>
+            <li>Reduce uncertainty</li>
+          </ul>
+          <ul class="nlist" style="counter-reset:n 5">
+            <li>Minimize conflicts</li>
+            <li>Stimulate exertion</li>
+            <li>Aid in allocation of resources</li>
+            <li>Aid in the design of jobs</li>
+            <li>Provide a basis for consistent decision making</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7 · FINANCIAL VS STRATEGIC ============ -->
+    <section class="slide" data-section="Long-Term Objectives" data-title="Financial vs. strategic objectives">
+      <div class="s-head">
+        <div><span class="kicker">Two kinds of objectives</span><h2 class="s-title">Financial vs. strategic objectives</h2>
+        <p class="s-sub">Both are common — and they often trade off against each other, forcing crucial choices.</p></div>
+        <div class="s-num">07 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>💰 Financial objectives</h4>
+            <ul class="blist tight">
+              <li>Growth in revenues &amp; earnings</li>
+              <li>Higher dividends &amp; larger profit margins</li>
+              <li>Greater return on investment, higher EPS</li>
+              <li>Rising stock price &amp; improved cash flow</li>
+            </ul>
+          </div>
+          <div class="card card--bee"><h4>🎯 Strategic objectives</h4>
+            <ul class="blist tight">
+              <li>Larger market share</li>
+              <li>Quicker on-time delivery than rivals</li>
+              <li>Lower costs &amp; higher quality than rivals</li>
+              <li>Wider geographic coverage &amp; tech leadership</li>
+              <li>New products to market ahead of rivals</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card card--ink pad-sm" style="display:flex;align-items:center;gap:14px">
+          <span class="chip chip--bee">The trade-off</span>
+          <span style="font-size:13.5px;color:var(--bee-pale)">Raising prices to hit short-term financial targets can jeopardize long-term market share. <b style="color:#fff">Amazon</b> operated for decades without profits, chasing market share instead — the best way to sustain advantage is to relentlessly pursue strategic objectives.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8 · TOOL: OBJECTIVES CHECKER ============ -->
+    <section class="slide" data-section="Long-Term Objectives" data-title="Tool — Objectives Quality Checker">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Objectives Quality Checker</h2></div>
+        <div class="s-num">08 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-obj">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Tap an example to grade it against the five characteristics, or write your own below and toggle the traits it meets.</span></div>
+          <div class="tabrow" id="obj-examples"></div>
+          <div class="toolwrap">
+            <div class="card" style="flex:1.2;overflow:auto"><div id="obj-result" class="scorecard"></div></div>
+            <div class="card card--bee" style="flex:1;display:flex;flex-direction:column;gap:9px">
+              <h4 style="margin:0">Build your own objective</h4>
+              <input id="obj-input" class="opt" style="font-weight:600;cursor:text" placeholder="e.g. Grow North America revenue 4% per year through 2027" />
+              <div class="tiny" style="margin:0">Toggle each trait your objective satisfies:</div>
+              <div class="chiprow" id="obj-checks"></div>
+              <div class="meter" style="margin-top:auto"><div class="meter-fill" id="obj-meter"></div></div>
+              <div id="obj-meter-label" class="tiny" style="margin:0;font-weight:700;color:var(--char)">0 of 5 — keep going</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 9 · CHEM ============ -->
+    <section class="slide" data-section="Long-Term Objectives" data-title="Avoid managing by CHEM">
+      <div class="s-head">
+        <div><span class="kicker">Pitfalls</span><h2 class="s-title">Avoid managing by C·H·E·M</h2>
+        <p class="s-sub">Four reactive habits that substitute for setting real objectives. "If you think education is expensive, try ignorance." — Derek Bok.</p></div>
+        <div class="s-num">09 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid4 fill" style="align-content:center">
+          <div class="card"><div class="stat"><b style="color:var(--coke)">C</b></div><h4 style="margin:6px 0 4px">Crisis</h4><p class="muted" style="font-size:13px;margin:0">Letting events dictate decisions — reacting to the most pressing problem of the day.</p></div>
+          <div class="card"><div class="stat"><b style="color:var(--coke)">H</b></div><h4 style="margin:6px 0 4px">Hope</h4><p class="muted" style="font-size:13px;margin:0">Betting good times are just around the corner if luck is on your side.</p></div>
+          <div class="card"><div class="stat"><b style="color:var(--coke)">E</b></div><h4 style="margin:6px 0 4px">Extrapolation</h4><p class="muted" style="font-size:13px;margin:0">"If it ain't broke, don't fix it" — keep doing the same thing the same way.</p></div>
+          <div class="card"><div class="stat"><b style="color:var(--coke)">M</b></div><h4 style="margin:6px 0 4px">Mystery</h4><p class="muted" style="font-size:13px;margin:0">No plan at all — everyone does their own thing and guesses what's happening.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 10 · 11 STRATEGIES MAP ============ -->
+    <section class="slide" data-section="Types of Strategies" data-title="The 11 types of strategies">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.2 · The big picture</span><h2 class="s-title">Eleven strategies, four families</h2>
+        <p class="s-sub">Every alternative a firm can pursue falls into one of these groups. Most firms run a combination — but no firm can afford them all, so priorities must be set.</p></div>
+        <div class="s-num">10 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid4 fill" style="align-content:start">
+          <div class="card"><div class="badge" style="background:var(--coke);color:#fff">Integration</div>
+            <ul class="blist tight" style="margin-top:9px"><li>Forward integration</li><li>Backward integration</li><li>Horizontal integration</li></ul>
+            <p class="tiny" style="margin:7px 0 0">Control distributors, suppliers, or competitors</p></div>
+          <div class="card"><div class="badge" style="background:var(--info);color:#fff">Intensive</div>
+            <ul class="blist tight" style="margin-top:9px"><li>Market penetration</li><li>Market development</li><li>Product development</li></ul>
+            <p class="tiny" style="margin:7px 0 0">Stick to core; redouble, relocate, or improve</p></div>
+          <div class="card"><div class="badge" style="background:var(--good);color:#fff">Diversification</div>
+            <ul class="blist tight" style="margin-top:9px"><li>Related diversification</li><li>Unrelated diversification</li></ul>
+            <p class="tiny" style="margin:7px 0 0">Add new products, related or not</p></div>
+          <div class="card"><div class="badge">Defensive</div>
+            <ul class="blist tight" style="margin-top:9px"><li>Retrenchment</li><li>Divestiture</li><li>Liquidation</li></ul>
+            <p class="tiny" style="margin:7px 0 0">Regroup, sell a part, or sell it all</p></div>
+        </div>
+        <div class="card card--bee pad-sm" style="display:flex;align-items:center;gap:12px">
+          <span class="chip chip--ghost" style="background:var(--ink);color:var(--bee)">Key idea</span>
+          <span style="font-size:13.5px;color:var(--char)">Strategy is "choices that risk resources, and trade-offs that sacrifice opportunity." Go north and you buy snowshoes — you can't also step south "just to be safe."</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 11 · LEVELS OF STRATEGIES ============ -->
+    <section class="slide" data-section="Types of Strategies" data-title="Levels of strategies">
+      <div class="s-head">
+        <div><span class="kicker">Who owns strategy</span><h2 class="s-title">Levels of strategy &amp; who is responsible</h2>
+        <p class="s-sub">Strategy is not just a top-executive task. Large firms have four levels; small firms collapse to three.</p></div>
+        <div class="s-num">11 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>Large company — four levels</h4>
+            <div class="col" style="gap:8px">
+              <div class="chip chip--bee" style="justify-content:flex-start">Corporate — Chief Executive Officer</div>
+              <div class="chip" style="justify-content:flex-start">Divisional — Division president / EVP</div>
+              <div class="chip" style="justify-content:flex-start">Functional — CFO, CMO, CIO, HR managers</div>
+              <div class="chip" style="justify-content:flex-start">Operational — Plant, sales &amp; dept. managers</div>
+            </div>
+          </div>
+          <div class="card"><h4>Small company — three levels</h4>
+            <div class="col" style="gap:8px">
+              <div class="chip chip--bee" style="justify-content:flex-start">Company — Owner or president</div>
+              <div class="chip" style="justify-content:flex-start">Functional — Finance, marketing, R&amp;D, HR</div>
+              <div class="chip" style="justify-content:flex-start">Operational — Plant, sales &amp; dept. managers</div>
+            </div>
+            <p class="tiny" style="margin:10px 0 0">Bonuses should weight long-term objectives more heavily at the top: 75% long-term at the corporate level, falling to 25% at the operational level.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 12 · TOOL: 11 STRATEGIES EXPLORER ============ -->
+    <section class="slide" data-section="Types of Strategies" data-title="Tool — Eleven Strategies Explorer">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Eleven Strategies Explorer</h2></div>
+        <div class="s-num">12 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-eleven">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Tap any strategy card to see its definition, a real-company example, the hypothetical Coke move from Assignment 10, and when it works best.</span></div>
+          <div class="toolwrap">
+            <div id="eleven-grid" style="flex:1.15;display:flex;flex-direction:column;gap:8px;overflow:auto"></div>
+            <div class="card" style="flex:1;overflow:auto"><div id="eleven-detail"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 13 · INTEGRATION OVERVIEW ============ -->
+    <section class="slide" data-section="Integration Strategies" data-title="Integration strategies overview">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.3 · Integration</span><h2 class="s-title">Vertical &amp; horizontal integration</h2>
+        <p class="s-sub">Forward + backward integration = vertical integration (control of distributors &amp; suppliers). Horizontal integration = control of competitors.</p></div>
+        <div class="s-num">13 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:center">
+          <div class="card center"><div style="font-size:30px">⬆️</div><h4 style="margin:6px 0 4px">Forward</h4><p class="muted" style="font-size:13px;margin:0">Move closer to the customer — own distributors or retailers.</p></div>
+          <div class="card center"><div style="font-size:30px">⬇️</div><h4 style="margin:6px 0 4px">Backward</h4><p class="muted" style="font-size:13px;margin:0">Move up the supply chain — own your suppliers.</p></div>
+          <div class="card center"><div style="font-size:30px">↔️</div><h4 style="margin:6px 0 4px">Horizontal</h4><p class="muted" style="font-size:13px;margin:0">Move sideways — own or control your competitors.</p></div>
+        </div>
+        <div class="card card--ink pad-sm" style="display:flex;align-items:center;gap:12px">
+          <span class="chip chip--bee">Coke caveat</span>
+          <span style="font-size:13.5px;color:var(--bee-pale)">If Coke vertically integrated — buying sugar farms or opening its own stores — both would be excessively costly and divert it from what it does best: <b style="color:#fff">producing beverages</b>. Joint ventures and alliances are usually the smarter alternative.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 14 · FORWARD INTEGRATION ============ -->
+    <section class="slide" data-section="Integration Strategies" data-title="Forward integration">
+      <div class="s-head">
+        <div><span class="kicker">Integration · 1 of 3</span><h2 class="s-title">Forward integration</h2>
+        <p class="s-sub">Gaining ownership or control over distributors / retailers — cutting out the middleman. Franchising is an effective way to implement it.</p></div>
+        <div class="s-num">14 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Present distributors are expensive, unreliable, or can't meet needs</li><li>Quality distributors are scarce (a rival could lock an exclusive)</li><li>The industry is growing and expected to keep growing</li><li>The firm has the capital &amp; people to run distribution</li><li>Stable production is especially valuable</li><li>Distributors have high profit margins worth capturing</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Nike</b> opens outlet stores and pushes direct-to-consumer sales; Nike.com revenue jumped 50%, aiming for $16B in direct sales.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Buy all the Coke bottlers it does not already own — moving Coke closer to consumers.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 15 · BACKWARD INTEGRATION ============ -->
+    <section class="slide" data-section="Integration Strategies" data-title="Backward integration">
+      <div class="s-head">
+        <div><span class="kicker">Integration · 2 of 3</span><h2 class="s-title">Backward integration</h2>
+        <p class="s-sub">Seeking ownership or control of a firm's suppliers — best when suppliers are unreliable, costly, or can't keep up.</p></div>
+        <div class="s-num">15 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Present suppliers are expensive, unreliable, or can't meet needs</li><li>Suppliers are few while competitors are many</li><li>The industry is growing rapidly</li><li>The firm has capital &amp; people to run supply</li><li>Stable raw-material prices are critically important</li><li>Suppliers enjoy high profit margins</li><li>Resources may be needed quickly</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Starbucks</b> bought its first coffee farm — a 600-acre property in Costa Rica — to develop varieties and fight coffee rust.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Purchase three of its sugar cane &amp; sugar beet suppliers to control its sweetener supply.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 16 · HORIZONTAL INTEGRATION ============ -->
+    <section class="slide" data-section="Integration Strategies" data-title="Horizontal integration">
+      <div class="s-head">
+        <div><span class="kicker">Integration · 3 of 3</span><h2 class="s-title">Horizontal integration</h2>
+        <p class="s-sub">Gaining ownership or control over competitors — arguably the most common growth strategy. Often meets antitrust challenges.</p></div>
+        <div class="s-num">16 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>The firm can gain monopolistic strength without a federal challenge</li><li>It competes in a growing industry</li><li>Greater economies of scale are a major advantage</li><li>It has the capital &amp; talent to manage a bigger organization</li><li>Competitors are faltering and can be bought at a discount</li><li>It wants to enter a new geographic market quickly</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Walgreens</b> acquired ~2,000 Rite Aid stores; <b>Cineworld</b> bought Regal for $3.6B to become the world's #2 cinema operator.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Take over Pepsi — absorbing its single largest competitor.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 17 · INTENSIVE OVERVIEW ============ -->
+    <section class="slide" data-section="Intensive Strategies" data-title="Intensive strategies overview">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.4 · Intensive</span><h2 class="s-title">Intensive strategies: stick to what you do best</h2>
+        <p class="s-sub">These require intensive effort to improve a firm's position with existing products. Unlike integration or diversification, they keep the firm near its core.</p></div>
+        <div class="s-num">17 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:center">
+          <div class="card center"><div class="badge" style="background:var(--info);color:#fff">1</div><h4 style="margin:8px 0 4px">Market penetration</h4><p class="muted" style="font-size:13px;margin:0">Redouble your effort — sell more of present products in present markets.</p></div>
+          <div class="card center"><div class="badge" style="background:var(--info);color:#fff">2</div><h4 style="margin:8px 0 4px">Market development</h4><p class="muted" style="font-size:13px;margin:0">Take what you do best "on the road" — new geographic areas.</p></div>
+          <div class="card center"><div class="badge" style="background:var(--info);color:#fff">3</div><h4 style="margin:8px 0 4px">Product development</h4><p class="muted" style="font-size:13px;margin:0">Improve on what you do best — better or new products.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 18 · MARKET PENETRATION ============ -->
+    <section class="slide" data-section="Intensive Strategies" data-title="Market penetration">
+      <div class="s-head">
+        <div><span class="kicker">Intensive · 1 of 3</span><h2 class="s-title">Market penetration</h2>
+        <p class="s-sub">Increase market share for present products in present markets through greater marketing — more salespeople, advertising, promotions, and publicity.</p></div>
+        <div class="s-num">18 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Current markets are not saturated</li><li>Present customers' usage rate could rise significantly</li><li>Competitors' market shares fall while industry sales rise</li><li>Sales correlate highly with marketing spend</li><li>Greater economies of scale are a major advantage</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Verizon</b> spent millions on its "Humanability" campaign to win share in present markets.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> case link</h4><p style="font-size:14px;margin:0;line-height:1.45">A global ad &amp; promotion blitz to shift perception of Coca-Cola from "unhealthy" to "treat yourself" — selling more in existing markets.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 19 · MARKET DEVELOPMENT ============ -->
+    <section class="slide" data-section="Intensive Strategies" data-title="Market development">
+      <div class="s-head">
+        <div><span class="kicker">Intensive · 2 of 3</span><h2 class="s-title">Market development</h2>
+        <p class="s-sub">Introducing present products into new geographic areas. GDP is a guide for where to expand — but matching consumption habits matters even more.</p></div>
+        <div class="s-num">19 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>New, reliable, inexpensive, quality channels are available</li><li>The firm is successful at what it does</li><li>New untapped or unsaturated markets exist</li><li>It has the capital &amp; people for expanded operations</li><li>It has excess production capacity</li><li>Its industry is becoming global in scope</li><li>Consumption habits are similar in the new areas</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Tesla</b> began making and selling cars in China; <b>Dollar General</b> adds 1,000 stores a year in new rural locations.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> case link</h4><p style="font-size:14px;margin:0;line-height:1.45">Build a manufacturing plant in Africa to serve markets not yet saturated — global expansion is Coke's #1 future strategy.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 20 · PRODUCT DEVELOPMENT ============ -->
+    <section class="slide" data-section="Intensive Strategies" data-title="Product development">
+      <div class="s-head">
+        <div><span class="kicker">Intensive · 3 of 3</span><h2 class="s-title">Product development</h2>
+        <p class="s-sub">Increasing sales by improving or modifying present products — usually with heavy R&amp;D spending. A firm doesn't stray far from what it does best.</p></div>
+        <div class="s-num">20 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Products are in the maturity stage of the life cycle</li><li>The industry has rapid technological change</li><li>Competitors offer better-quality products at similar prices</li><li>The firm competes in a high-growth industry</li><li>It has especially strong R&amp;D capabilities</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Kellogg</b> bought RXBAR to shift away from sugary cereals; <b>Ford</b> moved a third of its R&amp;D budget to electric.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Introduce new healthy alternative beverages — exactly the "new healthy drinks" Coke's case calls for.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 21 · TOOL: CLASSIFIER GAME ============ -->
+    <section class="slide" data-section="Intensive Strategies" data-title="Tool — Strategy Classifier Game">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Strategy Classifier Game</h2></div>
+        <div class="s-num">21 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-classify">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Read each Coca-Cola move and pick the correct strategy type. You get instant feedback and a running score across 11 rounds.</span></div>
+          <div class="row" style="align-items:center;gap:12px">
+            <div class="progbar"><i id="classify-bar"></i></div>
+            <div class="chip chip--bee" id="classify-score">Score 0 / 0</div>
+          </div>
+          <div class="card fill" style="display:flex;flex-direction:column;gap:11px;overflow:auto">
+            <div id="classify-scenario" style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.4"></div>
+            <div id="classify-options" class="grid2" style="gap:8px"></div>
+            <div id="classify-feedback"></div>
+            <div style="margin-top:auto;display:flex;justify-content:flex-end;gap:8px">
+              <button class="btn" id="classify-restart">Restart</button>
+              <button class="btn btn--primary" id="classify-next" disabled>Next ▸</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 22 · DIVERSIFICATION OVERVIEW ============ -->
+    <section class="slide" data-section="Diversification Strategies" data-title="Diversification overview">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.5 · Diversification</span><h2 class="s-title">Related vs. unrelated diversification</h2>
+        <p class="s-sub">Businesses are "related" when value chains have competitively valuable cross-business fit; "unrelated" when they don't. Diversification is on the retreat — "management couldn't manage the beast."</p></div>
+        <div class="s-num">22 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card card--bee"><h4>Why related diversification appeals</h4>
+            <ul class="blist tight"><li>Transfer expertise &amp; technology between businesses</li><li>Combine related activities to lower costs</li><li>Exploit a common, well-known brand name</li><li>Cross-business collaboration builds capabilities</li></ul>
+          </div>
+          <div class="card"><h4>The bar diversification must clear</h4>
+            <p style="font-size:14px;margin:0;line-height:1.45">It must add <b>more shareholder value than investors could create themselves</b> by buying stock across firms. Any new industry must be attractive enough to yield consistently high returns and real synergies. Many strategists say firms should "stick to the knitting."</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 23 · RELATED DIVERSIFICATION ============ -->
+    <section class="slide" data-section="Diversification Strategies" data-title="Related diversification">
+      <div class="s-head">
+        <div><span class="kicker">Diversification · 1 of 2</span><h2 class="s-title">Related diversification</h2>
+        <p class="s-sub">Adding new but related products that share a strategic fit with the firm's existing value chain.</p></div>
+        <div class="s-num">23 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>The firm competes in a no-growth or slow-growth industry</li><li>Related products would lift sales of current products</li><li>Related products can be offered at competitive prices</li><li>Related products have seasonal sales that offset existing peaks &amp; valleys</li><li>The firm has a strong management team</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Disney</b> acquired 21st Century Fox's film &amp; TV studios — related entertainment assets including FX, Nat Geo and Hulu.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Introduce tea-based beverages — a new product line closely related to Coke's drinks business.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 24 · UNRELATED DIVERSIFICATION ============ -->
+    <section class="slide" data-section="Diversification Strategies" data-title="Unrelated diversification">
+      <div class="s-head">
+        <div><span class="kicker">Diversification · 2 of 2</span><h2 class="s-title">Unrelated diversification</h2>
+        <p class="s-sub">Building a portfolio of businesses that can each deliver strong financial performance — rather than chasing strategic fit between them.</p></div>
+        <div class="s-num">24 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Existing markets for present products are saturated</li><li>The firm is in a highly competitive or no-growth industry</li><li>Present distribution channels can carry new products to current customers</li><li>New products have countercyclical sales patterns</li><li>The firm has the capital &amp; managerial talent for a new industry</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>CVS</b> acquired insurer <b>Aetna</b>; <b>Amazon</b> entered the $412B pharmacy business — both far from their original core.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Sell branded stationery products — an unrelated line with no fit to beverages.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 25 · DEFENSIVE OVERVIEW ============ -->
+    <section class="slide" data-section="Defensive Strategies" data-title="Defensive strategies overview">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.6 · Defensive</span><h2 class="s-title">Defensive strategies</h2>
+        <p class="s-sub">When a firm is struggling, it can regroup, sell a part, or sell everything. Retrenchment is the broad term that can include the other two.</p></div>
+        <div class="s-num">25 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:center">
+          <div class="card center"><div style="font-size:30px">🔧</div><h4 style="margin:6px 0 4px">Retrenchment</h4><p class="muted" style="font-size:13px;margin:0">Regroup through cost &amp; asset reduction — a turnaround.</p></div>
+          <div class="card center"><div style="font-size:30px">✂️</div><h4 style="margin:6px 0 4px">Divestiture</h4><p class="muted" style="font-size:13px;margin:0">Sell a division or part of the organization.</p></div>
+          <div class="card center"><div style="font-size:30px">🏷️</div><h4 style="margin:6px 0 4px">Liquidation</h4><p class="muted" style="font-size:13px;margin:0">Sell all assets, in parts, for their tangible worth.</p></div>
+        </div>
+        <div class="card card--ink pad-sm" style="display:flex;align-items:center;gap:12px">
+          <span class="chip chip--bee">Bankruptcy</span>
+          <span style="font-size:13.5px;color:var(--bee-pale)"><b style="color:#fff">Chapter 11</b> lets a firm retrench, reorganize and come back. <b style="color:#fff">Chapter 7</b> is a liquidation procedure used when there's no hope of operating successfully.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 26 · RETRENCHMENT ============ -->
+    <section class="slide" data-section="Defensive Strategies" data-title="Retrenchment">
+      <div class="s-head">
+        <div><span class="kicker">Defensive · 1 of 3</span><h2 class="s-title">Retrenchment (turnaround)</h2>
+        <p class="s-sub">Regrouping through cost and asset reduction to reverse declining sales and profits — selling land, pruning product lines, closing plants, cutting staff.</p></div>
+        <div class="s-num">26 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>The firm is plagued by inefficiency, low profits, poor morale &amp; stockholder pressure</li><li>It has failed to use strengths and opportunities or fix weaknesses over time</li><li>It has grown so large, so fast that major reorganization is needed</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Eli Lilly</b> cut 8% of its workforce and redirected savings into R&amp;D; <b>GoPro</b> laid off a fifth of staff and exited drones.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Close down Coca-Cola operations in Asia to cut costs and regroup around stronger regions.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 27 · DIVESTITURE ============ -->
+    <section class="slide" data-section="Defensive Strategies" data-title="Divestiture">
+      <div class="s-head">
+        <div><span class="kicker">Defensive · 2 of 3</span><h2 class="s-title">Divestiture</h2>
+        <p class="s-sub">Selling a division or part of an organization — often to raise capital, refocus on the core, and become less diversified.</p></div>
+        <div class="s-num">27 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Retrenchment failed to deliver needed improvements</li><li>A division causes the firm's overall poor performance</li><li>A division is a misfit — different markets, customers, or values</li><li>A large amount of cash is needed quickly</li><li>Government antitrust action threatens the firm</li></ul>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Nestlé</b> divested its U.S. chocolate business to Ferrero for $2.8B to refocus on its core.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Sell Dasani — shedding the bottled-water division to raise capital and refocus.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 28 · LIQUIDATION ============ -->
+    <section class="slide" data-section="Defensive Strategies" data-title="Liquidation">
+      <div class="s-head">
+        <div><span class="kicker">Defensive · 3 of 3</span><h2 class="s-title">Liquidation</h2>
+        <p class="s-sub">Selling all of a company's assets, in parts, for their tangible worth — a recognition of defeat, and an emotionally difficult strategy.</p></div>
+        <div class="s-num">28 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill">
+          <div class="card" style="flex:1.1"><h4>Especially effective when…</h4>
+            <ul class="nlist"><li>Both retrenchment and divestiture were tried and failed</li><li>Stockholders can minimize their losses by selling the firm's assets</li></ul>
+            <p class="tiny" style="margin:12px 0 0">It can be better to cease operating than to keep losing large sums of money.</p>
+          </div>
+          <div class="col" style="flex:.85">
+            <div class="card card--bee"><h4>Real example</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Toys "R" Us</b> liquidated 885 U.S. stores (~33,000 jobs); <b>Ringling Bros.</b> closed after 146 years.</p></div>
+            <div class="card"><h4><span class="chip chip--coke">Coke</span> Assignment 10</h4><p style="font-size:14px;margin:0;line-height:1.45">Sell Coke's secret formula / recipe — auctioning off the company's single most valuable asset.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 29 · VALUE CHAIN ANALYSIS ============ -->
+    <section class="slide" data-section="Value Chain &amp; Benchmarking" data-title="Value chain analysis">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.7 · Value chain</span><h2 class="s-title">Value chain analysis (VCA)</h2>
+        <p class="s-sub">VCA determines the value — price minus cost — of every activity that goes into producing and marketing a product, from raw materials to customer service.</p></div>
+        <div class="s-num">29 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="card pad-sm" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div class="chip chip--bee" style="font-size:13px;padding:7px 14px">Supplier</div><span style="color:var(--soft)">→</span>
+          <div class="chip chip--bee" style="font-size:13px;padding:7px 14px">Company</div><span style="color:var(--soft)">→</span>
+          <div class="chip chip--bee" style="font-size:13px;padding:7px 14px">Distribution</div><span style="color:var(--soft)">→</span>
+          <div class="chip chip--bee" style="font-size:13px;padding:7px 14px">Customer</div>
+        </div>
+        <div class="grid2 fill">
+          <div class="card"><h4>Why it matters</h4><p style="font-size:14px;margin:0;line-height:1.45">Value activities are hard for rivals to copy, so they're a source of <b>sustainable</b> advantage. Just cutting price or hiring a celebrity is easily imitated. A firm should know not only its own value chain, but those of its industry, competitors, suppliers and distributors.</p></div>
+          <div class="card card--bee"><h4>Two paths to value</h4><p style="font-size:14px;margin:0 0 8px;line-height:1.45">To beat rivals, create value that exceeds theirs in one of two ways:</p>
+            <div class="chiprow"><span class="chip" style="background:#fff">① Operate at the lowest cost</span><span class="chip" style="background:#fff">② Command a premium price</span></div>
+            <p class="tiny" style="margin:8px 0 0">Rolex creates value through prestige; Timex through price &amp; utility — both win in the same industry.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 30 · TOOL: VALUE CHAIN EXPLORER ============ -->
+    <section class="slide" data-section="Value Chain &amp; Benchmarking" data-title="Tool — Value Chain Explorer">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Coca-Cola Value Chain Explorer</h2></div>
+        <div class="s-num">30 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-vca">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Tap each segment of the value chain to see the cost activities inside it and how they play out for Coca-Cola specifically.</span></div>
+          <div class="vcchain" id="vca-chain"></div>
+          <div class="card fill" style="overflow:auto"><div id="vca-detail"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 31 · CORE → DISTINCTIVE COMPETENCE ============ -->
+    <section class="slide" data-section="Value Chain &amp; Benchmarking" data-title="Core to distinctive competence">
+      <div class="s-head">
+        <div><span class="kicker">Figure 5-5</span><h2 class="s-title">From value chain to sustained advantage</h2>
+        <p class="s-sub">A core competence is any value-chain element a firm performs especially well. When it becomes a major competitive advantage, it is a distinctive competence.</p></div>
+        <div class="s-num">31 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill" style="align-items:stretch">
+          <div class="card center" style="flex:1;justify-content:center"><span class="badge" style="background:#E07B00">Step 1</span><h4 style="margin:8px 0 4px">Value-chain activities</h4><p class="muted" style="font-size:12.5px;margin:0">Identified &amp; assessed</p></div>
+          <div class="center" style="flex:0 0 28px;font-size:22px;color:var(--soft)">→</div>
+          <div class="card center" style="flex:1;justify-content:center"><span class="badge" style="background:var(--good)">Step 2</span><h4 style="margin:8px 0 4px">Core competencies</h4><p class="muted" style="font-size:12.5px;margin:0">Arise in some activities</p></div>
+          <div class="center" style="flex:0 0 28px;font-size:22px;color:var(--soft)">→</div>
+          <div class="card center" style="flex:1;justify-content:center"><span class="badge" style="background:var(--info)">Step 3</span><h4 style="margin:8px 0 4px">Distinctive competencies</h4><p class="muted" style="font-size:12.5px;margin:0">Some core competencies evolve</p></div>
+          <div class="center" style="flex:0 0 28px;font-size:22px;color:var(--soft)">→</div>
+          <div class="card card--bee center" style="flex:1;justify-content:center"><span class="badge">Step 4</span><h4 style="margin:8px 0 4px">Sustained advantage</h4><p style="font-size:12.5px;margin:0;color:var(--char)">Some distinctive competencies yield it</p></div>
+        </div>
+        <div class="card card--ink pad-sm" style="display:flex;align-items:center;gap:12px">
+          <span class="chip chip--bee">Coke example</span>
+          <span style="font-size:13.5px;color:var(--bee-pale)">Coca-Cola's <b style="color:#fff">brand equity and global franchised bottling network</b> are distinctive competencies rivals cannot easily replicate.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 32 · BENCHMARKING ============ -->
+    <section class="slide" data-section="Value Chain &amp; Benchmarking" data-title="Benchmarking">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.7 · Benchmarking</span><h2 class="s-title">Benchmarking — wisely</h2>
+        <p class="s-sub">Examining value-chain activities across an industry to find "best practices," then duplicating or improving on them.</p></div>
+        <div class="s-num">32 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>How it helps</h4><p style="font-size:14px;margin:0;line-height:1.45">It identifies activities where rivals hold an advantage in cost, service, reputation, or operation — and lets a firm act to close the gap. Sources include published reports, trade publications, suppliers, distributors, customers, and willing rivals.</p></div>
+          <div class="card card--bee"><h4>⚠ Never benchmark blindly</h4><p style="font-size:14px;margin:0;line-height:1.45"><b>Five Guys</b> should not copy <b>McDonald's</b> service-time, and McDonald's should not copy Five Guys' quality. Benchmarking the wrong variable can lead a firm away from what made it successful. Uniqueness still matters.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 33 · PORTER OVERVIEW ============ -->
+    <section class="slide" data-section="Porter's Generic Strategies" data-title="Porter's generic strategies">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.8 · Porter</span><h2 class="s-title">Porter's two generic strategies</h2>
+        <p class="s-sub">Competitive advantage comes from two bases — cost leadership and differentiation. It's hard to compete on both at once. Each splits by market breadth into four types.</p></div>
+        <div class="s-num">33 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card center" style="justify-content:center;gap:8px">
+            <table class="tbl" style="width:100%">
+              <tr><th></th><th>Cost leadership</th><th>Differentiation</th></tr>
+              <tr><td><b>Broad market</b></td><td><b>Type 1</b><br><span class="muted" style="font-size:12px">Walmart, Amazon</span></td><td><b>Type 3</b><br><span class="muted" style="font-size:12px">Apple, BMW</span></td></tr>
+              <tr><td><b>Narrow market</b></td><td><b>Type 2</b><br><span class="muted" style="font-size:12px">Dollar General</span></td><td><b>Type 4</b><br><span class="muted" style="font-size:12px">Rolex, Louis Vuitton</span></td></tr>
+            </table>
+          </div>
+          <div class="col">
+            <div class="card"><h4>Cost leadership</h4><p style="font-size:13.5px;margin:0;line-height:1.4">Standardized products at the lowest per-unit cost for price-sensitive buyers. The firm reduces cost all along its value chain.</p></div>
+            <div class="card card--bee"><h4>Differentiation</h4><p style="font-size:13.5px;margin:0;line-height:1.4">Products considered unique, for buyers who are relatively price-insensitive. The firm maximizes value all along its value chain.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 34 · COST LEADERSHIP ============ -->
+    <section class="slide" data-section="Porter's Generic Strategies" data-title="Cost leadership">
+      <div class="s-head">
+        <div><span class="kicker">Generic · cost</span><h2 class="s-title">Cost leadership (Types 1 &amp; 2)</h2>
+        <p class="s-sub">Both target a large market to achieve economies of scale. Underprice rivals to gain share — but the advantage must be hard for rivals to copy.</p></div>
+        <div class="s-num">34 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>The two types</h4>
+            <ul class="blist tight"><li><b>Type 1 — broad low-cost:</b> low prices to a wide range of customers (Walmart, Amazon)</li><li><b>Type 2 — focused low-cost:</b> low prices to a small range of customers (Dollar General, Jiffy Lube, Little Caesars, Spirit Airlines)</li></ul>
+            <p class="tiny" style="margin:9px 0 0">Works best with many price-sensitive buyers, few ways to differentiate, and powerful buyers.</p>
+          </div>
+          <div class="card card--ink"><h4>Risks</h4>
+            <ul class="blist tight"><li>Competitors imitate, driving industry profits down</li><li>A technological breakthrough makes it ineffective</li><li>Buyers shift to other features besides price</li><li>Simply cutting retail prices is easily copied and erodes margins</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 35 · DIFFERENTIATION ============ -->
+    <section class="slide" data-section="Porter's Generic Strategies" data-title="Differentiation">
+      <div class="s-head">
+        <div><span class="kicker">Generic · differentiation</span><h2 class="s-title">Differentiation (Types 3 &amp; 4)</h2>
+        <p class="s-sub">Less reliant on scale, so serving a small group can work if they'll pay a premium. Pursue only after careful study of buyers' needs.</p></div>
+        <div class="s-num">35 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>The two types</h4>
+            <ul class="blist tight"><li><b>Type 3 — broad differentiation:</b> unique value to a wide audience (Monster Beverage, Apple, BMW)</li><li><b>Type 4 — focused differentiation:</b> unique value to a narrow audience (Louis Vuitton, Rolex, Maserati)</li></ul>
+            <p class="tiny" style="margin:9px 0 0">Bases include superior service, design, performance, useful life, or ease of use. Apple differentiates through its own iOS.</p>
+          </div>
+          <div class="card card--ink"><h4>Risks</h4>
+            <ul class="blist tight"><li>Customers may not value the uniqueness enough to justify the price</li><li>Competitors may quickly copy the differentiating features</li></ul>
+            <p class="tiny" style="margin:9px 0 0;color:#cbc3a6">Find durable sources of uniqueness that can't be imitated quickly or cheaply.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 36 · TOOL: PORTER MATRIX ============ -->
+    <section class="slide" data-section="Porter's Generic Strategies" data-title="Tool — Porter's Strategy Matrix">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Porter's Generic Strategy Matrix</h2></div>
+        <div class="s-num">36 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-porter">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Tap any quadrant to see what it means, the firms that live there, and its risks. Note where Coca-Cola fits.</span></div>
+          <div class="toolwrap">
+            <div class="pmx" id="porter-grid"></div>
+            <div class="card" style="flex:0 0 330px;overflow:auto"><div id="porter-detail"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 37 · BUILD/BORROW/BUY OVERVIEW ============ -->
+    <section class="slide" data-section="Build, Borrow, or Buy" data-title="Build, borrow, or buy">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.9 · Means</span><h2 class="s-title">Build, borrow, or buy?</h2>
+        <p class="s-sub">Under constant pressure to grow ~4%+ and raise dividends, firms choose among three ways to achieve their strategies.</p></div>
+        <div class="s-num">37 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:center">
+          <div class="card center"><div style="font-size:30px">🏗️</div><h4 style="margin:6px 0 4px">Build</h4><p class="muted" style="font-size:13px;margin:0">Grow internally (organically) — hire, train, build, or find a blue ocean.</p></div>
+          <div class="card center"><div style="font-size:30px">🤝</div><h4 style="margin:6px 0 4px">Borrow</h4><p class="muted" style="font-size:13px;margin:0">Grow with others — joint ventures &amp; strategic alliances.</p></div>
+          <div class="card center"><div style="font-size:30px">💵</div><h4 style="margin:6px 0 4px">Buy</h4><p class="muted" style="font-size:13px;margin:0">Grow by acquiring — mergers, acquisitions, LBOs.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 38 · BUILD ============ -->
+    <section class="slide" data-section="Build, Borrow, or Buy" data-title="Build from within">
+      <div class="s-head">
+        <div><span class="kicker">Means · build</span><h2 class="s-title">Build from within (organic growth)</h2>
+        <p class="s-sub">New training, new hires, building your own stores — or a blue ocean strategy that targets a new market where no rival yet competes.</p></div>
+        <div class="s-num">38 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card card--bee"><h4>🌊 Blue ocean vs. red ocean</h4><p style="font-size:14px;margin:0;line-height:1.45">A <b>blue ocean</b> is uncontested market space; a <b>red ocean</b> is crowded, often competing on price. Kim &amp; Mauborgne found 86% of new products are line extensions — only 14% target new markets.</p></div>
+          <div class="card"><h4>Examples</h4><p style="font-size:14px;margin:0;line-height:1.45">Apple's PC and smartphone, plus Netflix, Southwest, eBay and Amazon, were all partly blue-ocean — customers didn't even know they wanted them. But blue oceans rarely last: rivals enter fast.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 39 · BORROW ============ -->
+    <section class="slide" data-section="Build, Borrow, or Buy" data-title="Borrow from others">
+      <div class="s-head">
+        <div><span class="kicker">Means · borrow</span><h2 class="s-title">Borrow — joint ventures &amp; alliances</h2>
+        <p class="s-sub">Two or more firms form a temporary partnership with shared equity to seize an opportunity too complex, costly, or risky to pursue alone.</p></div>
+        <div class="s-num">39 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>Why borrow?</h4><p style="font-size:14px;margin:0 0 8px;line-height:1.4">A firm borrows when it can't build the resources internally, or when merging is too costly/risky. JVs improve networking, globalize operations, and minimize risk.</p>
+            <div class="chip chip--coke" style="font-size:11.5px">Coke &amp; Nestlé ran "Beverage Partners Worldwide" — a tea JV they later dissolved</div>
+          </div>
+          <div class="card card--ink"><h4>Why JVs struggle</h4>
+            <ul class="blist tight"><li>The daily managers weren't involved in forming it</li><li>It benefits the partners but not customers</li><li>It isn't supported equally by both partners</li><li>It starts to compete with one partner more than the other</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 40 · BUY ============ -->
+    <section class="slide" data-section="Build, Borrow, or Buy" data-title="Buy others to grow">
+      <div class="s-head">
+        <div><span class="kicker">Means · buy</span><h2 class="s-title">Buy — mergers &amp; acquisitions</h2>
+        <p class="s-sub">A merger unites two firms of about equal size; an acquisition is a large firm buying a smaller one (or vice versa). Unwanted = a hostile takeover.</p></div>
+        <div class="s-num">40 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card card--bee"><h4>Why M&amp;A often fails</h4>
+            <ul class="blist tight"><li>Integration difficulties across both value chains</li><li>Too much new debt</li><li>Inability to achieve synergy</li><li>Too much diversification</li><li>Hard to merge different cultures</li><li>Reduced morale from layoffs &amp; relocations</li></ul>
+          </div>
+          <div class="card"><h4>Also worth knowing</h4>
+            <p style="font-size:13.5px;margin:0 0 8px;line-height:1.4">A <b>leveraged buyout (LBO)</b> uses borrowed funds to take a public firm private. <b>Private-equity</b> firms buy firms cheap to sell them later high.</p>
+            <div class="chip chip--coke" style="font-size:11.5px">Keurig Green Mountain acquired Dr Pepper Snapple in 2018 — aimed squarely at Coke</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 41 · TOOL: BUILD/BORROW/BUY ============ -->
+    <section class="slide" data-section="Build, Borrow, or Buy" data-title="Tool — Build · Borrow · Buy">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Build · Borrow · Buy Decision Coach</h2></div>
+        <div class="s-num">41 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-bbb">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Read each growth situation Coca-Cola might face and choose the best means. Instant feedback explains the right call.</span></div>
+          <div class="row" style="align-items:center;gap:12px">
+            <div class="progbar"><i id="bbb-bar"></i></div>
+            <div class="chip chip--bee" id="bbb-score">Score 0 / 0</div>
+          </div>
+          <div class="card fill" style="display:flex;flex-direction:column;gap:11px;overflow:auto">
+            <div id="bbb-scenario" style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.4"></div>
+            <div id="bbb-options" class="grid3" style="gap:9px"></div>
+            <div id="bbb-feedback"></div>
+            <div style="margin-top:auto;display:flex;justify-content:flex-end;gap:8px">
+              <button class="btn" id="bbb-restart">Restart</button>
+              <button class="btn btn--primary" id="bbb-next" disabled>Next ▸</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 42 · FIRST-MOVER ============ -->
+    <section class="slide" data-section="First Mover &amp; Special Cases" data-title="First-mover advantages">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.10 · First mover</span><h2 class="s-title">First-mover advantages &amp; disadvantages</h2>
+        <p class="s-sub">Benefits of entering a market or launching a product before rivals — like taking the high ground first. But moving first carries real risk.</p></div>
+        <div class="s-num">42 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card card--bee"><h4>Six first-mover benefits</h4>
+            <ul class="blist tight"><li>Secure access to rare resources</li><li>Gain knowledge of critical success factors</li><li>Win market share &amp; the best locations</li><li>Lock in long-term relationships</li><li>Build customer loyalty</li><li>Gain patent protection early</li></ul>
+          </div>
+          <div class="card"><h4>When to be a fast follower instead</h4>
+            <p style="font-size:14px;margin:0;line-height:1.45">Being a slow / late mover works when a rival's product is easy to copy, especially when initial costs are high. If technology advances quickly, fast followers can <b>leapfrog</b> with improved second-generation products — as seen in electric cars, where adoption is slowed by switching costs and charging infrastructure.</p>
+            <p class="tiny" style="margin:9px 0 0">Apple was a struggling first mover in PCs, but a dominant first mover in iPods and iPhones.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 43 · NONPROFIT & SMALL FIRMS ============ -->
+    <section class="slide" data-section="First Mover &amp; Special Cases" data-title="Nonprofit, government &amp; small firms">
+      <div class="s-head">
+        <div><span class="kicker">LO 5.11 · Special cases</span><h2 class="s-title">Nonprofit, government &amp; small firms</h2>
+        <p class="s-sub">Strategic planning is just as vital outside the for-profit corporation — sometimes more so.</p></div>
+        <div class="s-num">43 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:start">
+          <div class="card"><h4>Nonprofits</h4><p style="font-size:13.5px;margin:0 0 6px;line-height:1.4">Differ from for-profits in just two ways:</p><ul class="blist tight"><li>They don't pay taxes</li><li>They have no shareholders for capital</li></ul><p class="tiny" style="margin:7px 0 0">They still have customers, suppliers, budgets &amp; competitors that want to put them out of business.</p></div>
+          <div class="card"><h4>Government agencies</h4><p style="font-size:13.5px;margin:0;line-height:1.4">Operate with less strategic autonomy — they usually can't diversify or merge, and politics narrows their choices. Strategic planning helps justify funding requests.</p></div>
+          <div class="card card--bee"><h4>Small firms</h4><p style="font-size:13.5px;margin:0;line-height:1.4">From day one every firm has a strategy, even if it just evolves. Planning is often informal, but small firms that do it generally outperform those that don't.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 44 · COKE OVERVIEW ============ -->
+    <section class="slide" data-section="Coca-Cola Cohesion Case" data-title="Coca-Cola at a glance">
+      <div class="s-head">
+        <div><span class="kicker">Cohesion case · 2018</span><h2 class="s-title">The Coca-Cola Company at a glance</h2>
+        <p class="s-sub">The world's largest beverage producer — 500+ brands in 200+ countries — but with revenue declining for nearly a decade.</p></div>
+        <div class="s-num">44 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid4" style="align-content:start">
+          <div class="card center"><div class="stat" style="align-items:center"><b>$35.4B</b><span>2017 revenue</span></div><div class="chip chip--coke" style="margin-top:6px;font-size:11px">▼ 15% vs 2016</div></div>
+          <div class="card center"><div class="stat" style="align-items:center"><b>$1.25B</b><span>2017 net income</span></div><div class="chip chip--coke" style="margin-top:6px;font-size:11px">▼ 81% vs 2016</div></div>
+          <div class="card center"><div class="stat" style="align-items:center"><b>21</b><span>billion-dollar brands</span></div><div class="chip" style="margin-top:6px;font-size:11px">19 low/no-sugar</div></div>
+          <div class="card center"><div class="stat" style="align-items:center"><b>~$4B</b><span>annual advertising</span></div><div class="chip" style="margin-top:6px;font-size:11px">100,300 employees</div></div>
+        </div>
+        <div class="grid2 fill">
+          <div class="card"><h4>The model since 1889</h4><p style="font-size:13.5px;margin:0;line-height:1.45">Founded 1886; Coke produces <b>syrup concentrate</b> and sells it to franchised bottlers with exclusive territories. Five large bottlers (led by Coca-Cola FEMSA) supply 39% of needs. Four of the world's top five beverages are Coke products.</p></div>
+          <div class="card card--bee"><h4>Mission &amp; the challenge</h4><p style="font-size:13.5px;margin:0;line-height:1.45">Mission: "to refresh the planet; to create moments of optimism and happiness; to provide value and make a difference." But the customer base is eroding and shareholders want sustained <b>5% growth</b> — not declines.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 45 · TOOL: FINANCIAL DASHBOARD ============ -->
+    <section class="slide" data-section="Coca-Cola Cohesion Case" data-title="Tool — Coke Financial Dashboard">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Coca-Cola Financial Dashboard</h2></div>
+        <div class="s-num">45 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-fin">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Switch tabs to explore the income statement and segment performance from the cohesion case. Real 2016–2017 figures.</span></div>
+          <div class="tabrow" id="fin-tabs"></div>
+          <div class="card fill" style="display:flex;flex-direction:column;gap:8px"><canvas id="fin-canvas"></canvas><div id="fin-note" class="tiny" style="margin:0"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 46 · TOOL: BEVERAGE TRENDS ============ -->
+    <section class="slide" data-section="Coca-Cola Cohesion Case" data-title="Tool — Beverage Industry Trends">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Beverage Industry Trend Visualizer</h2></div>
+        <div class="s-num">46 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-trend">
+          <div class="tool-hint"><span class="badge">tool</span> <span>See which beverage categories are growing or shrinking, and compare Coke with its two biggest rivals on any metric.</span></div>
+          <div class="tabrow" id="trend-tabs"></div>
+          <div class="tabrow" id="trend-metrics" style="display:none"></div>
+          <div class="card fill" style="display:flex;flex-direction:column;gap:8px"><canvas id="trend-canvas"></canvas><div id="trend-note" class="tiny" style="margin:0"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 47 · COMPETITORS ============ -->
+    <section class="slide" data-section="Coca-Cola Cohesion Case" data-title="Coke's competitors">
+      <div class="s-head">
+        <div><span class="kicker">Industry</span><h2 class="s-title">Coca-Cola's competitive arena</h2>
+        <p class="s-sub">PepsiCo and Dr Pepper Snapple are the primary rivals; Nestlé, Danone, Suntory and Monster compete too.</p></div>
+        <div class="s-num">47 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3" style="align-content:start">
+          <div class="card"><h4>PepsiCo</h4><p style="font-size:13px;margin:0;line-height:1.4">Gets ~60% of revenue from food &amp; snacks (Frito-Lay, Quaker), not beverages — a diversification model Coke's case says it might copy.</p></div>
+          <div class="card"><h4>Dr Pepper Snapple</h4><p style="font-size:13px;margin:0;line-height:1.4">#3 U.S. soft-drink maker; owns 7 of the top 10 non-cola soft drinks. Acquired by Keurig Green Mountain in 2018.</p></div>
+          <div class="card card--bee"><h4>Monster Beverage</h4><p style="font-size:13px;margin:0;line-height:1.4">Coca-Cola owns <b>16.7%</b> of Monster; in 2017 they swapped energy and non-energy brands.</p></div>
+        </div>
+        <div class="card fill" style="overflow:auto">
+          <h4>Coke vs. its two big rivals</h4>
+          <table class="tbl">
+            <tr><th>Metric</th><th>Coca-Cola</th><th>Dr Pepper</th><th>PepsiCo</th></tr>
+            <tr><td>Market capitalization</td><td class="tnum">$197B</td><td>$17B</td><td>$167B</td></tr>
+            <tr><td>Revenue</td><td>$41.8B</td><td>$6.6B</td><td class="tnum">$63.5B</td></tr>
+            <tr><td>Employees</td><td>100,300</td><td>20,000</td><td class="tnum">264,000</td></tr>
+            <tr><td>Operating margin</td><td class="tnum">24.1%</td><td>20.7%</td><td>16.4%</td></tr>
+          </table>
+          <p class="tiny" style="margin:8px 0 0">Coke is 11× larger than Dr Pepper and 18% larger than PepsiCo by market cap — but PepsiCo leads on revenue, employees and several other measures.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 48 · COKE FUTURE STRATEGIES ============ -->
+    <section class="slide" data-section="Coca-Cola Cohesion Case" data-title="Coke's future strategy menu">
+      <div class="s-head">
+        <div><span class="kicker">The future</span><h2 class="s-title">Nine strategy categories Coke is weighing</h2>
+        <p class="s-sub">Declining carbonated-beverage consumption forces a comprehensive plan. The case lays out nine directions — map each one to a Chapter 5 strategy type.</p></div>
+        <div class="s-num">48 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid3 fill" style="align-content:start">
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Market development</span><p style="font-size:13px;margin:6px 0 0">Global expansion into markets not yet saturated</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Product development</span><p style="font-size:13px;margin:6px 0 0">New healthy drinks &amp; natural sweeteners</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Horizontal integration</span><p style="font-size:13px;margin:6px 0 0">Acquire small rival firms for revenue growth</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Market penetration</span><p style="font-size:13px;margin:6px 0 0">Heavy advertising to shift perception to "treat yourself"</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Product development</span><p style="font-size:13px;margin:6px 0 0">Shift to smaller cans &amp; package sizes</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Unrelated diversification</span><p style="font-size:13px;margin:6px 0 0">Move into snacks &amp; foods, as PepsiCo has</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Market penetration</span><p style="font-size:13px;margin:6px 0 0">Push aggressively into fast-growing bottled water</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Product development</span><p style="font-size:13px;margin:6px 0 0">Develop natural sweeteners to replace artificial ones</p></div>
+          <div class="card pad-sm"><span class="chip chip--bee" style="font-size:10.5px">Defensive / lobbying</span><p style="font-size:13px;margin:6px 0 0">Increase lobbying to curb city &amp; state sugar taxes</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 49 · ASSIGNMENT Q1 ============ -->
+    <section class="slide" data-section="Assignment 10" data-title="Q1 — Types vs. actual strategies">
+      <div class="s-head">
+        <div><span class="kicker">Assignment 10 · Question 1</span><h2 class="s-title">Strategy types vs. actual strategies</h2>
+        <p class="s-sub">"Explain the difference between strategic types and actual strategies."</p></div>
+        <div class="s-num">49 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card"><h4>Strategy types — the general categories</h4>
+            <p style="font-size:13.5px;margin:0 0 8px;line-height:1.45">Strategies are plans of action used to attain long-term goals. They come in broad <b>types</b> that describe the kind of move — and the level at which it's made:</p>
+            <ul class="blist tight"><li><b>Corporate</b> — high-level direction &amp; long-term wellbeing</li><li><b>Business</b> — competitive advantage &amp; market share</li><li><b>Functional</b> — optimize each department's capabilities</li></ul>
+            <p class="tiny" style="margin:8px 0 0">In Chapter 5 terms, the "types" are the 11 generic strategies (forward integration, market penetration, and so on).</p>
+          </div>
+          <div class="card card--bee"><h4>Actual strategies — the specific plan</h4>
+            <p style="font-size:13.5px;margin:0 0 8px;line-height:1.45">An <b>actual strategy</b> is a clear, specific plan of action that defines exactly what an organization will do, over a defined period, to reach a specific goal.</p>
+            <div class="card pad-sm" style="background:#fff"><p style="font-size:13px;margin:0"><span class="chip chip--coke" style="font-size:10.5px">Type</span> Forward integration &nbsp;→&nbsp; <span class="chip" style="font-size:10.5px">Actual</span> "Buy all Coke bottlers it doesn't already own"</p></div>
+            <p class="tiny" style="margin:8px 0 0">The type is generic; the actual strategy is specific to the company. Be specific to the extent possible.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 50 · ASSIGNMENT Q2 TABLE ============ -->
+    <section class="slide" data-section="Assignment 10" data-title="Q2 — Eleven hypothetical Coke strategies">
+      <div class="s-head">
+        <div><span class="kicker">Assignment 10 · Question 2</span><h2 class="s-title">Eleven hypothetical Coca-Cola strategies</h2>
+        <p class="s-sub">A specific, hypothetical strategy for each of the textbook's eleven types — forward integration is the given example.</p></div>
+        <div class="s-num">50 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="row fill" style="gap:14px">
+          <table class="tbl" style="flex:1">
+            <tr><th style="width:42%">Strategy type</th><th>Hypothetical Coca-Cola move</th></tr>
+            <tr><td><b>1 · Forward integration</b></td><td>Buy all Coke bottlers they do not already own</td></tr>
+            <tr><td><b>2 · Backward integration</b></td><td>Purchase three of its sugar cane &amp; sugar beet suppliers</td></tr>
+            <tr><td><b>3 · Horizontal integration</b></td><td>Take over Pepsi</td></tr>
+            <tr><td><b>4 · Market penetration</b></td><td>Introduce Coca-Cola in North Korea and Cuba</td></tr>
+            <tr><td><b>5 · Market development</b></td><td>Open snack-food branches all over the world</td></tr>
+            <tr><td><b>6 · Product development</b></td><td>Introduce new healthy alternative beverages</td></tr>
+          </table>
+          <table class="tbl" style="flex:1">
+            <tr><th style="width:42%">Strategy type</th><th>Hypothetical Coca-Cola move</th></tr>
+            <tr><td><b>7 · Related diversification</b></td><td>Introduce tea-based beverages</td></tr>
+            <tr><td><b>8 · Unrelated diversification</b></td><td>Sell branded stationery products</td></tr>
+            <tr><td><b>9 · Retrenchment</b></td><td>Close down Coca-Cola operations in Asia</td></tr>
+            <tr><td><b>10 · Divestiture</b></td><td>Sell Dasani</td></tr>
+            <tr><td><b>11 · Liquidation</b></td><td>Sell Coke's secret formula / recipe</td></tr>
+            <tr><td colspan="2" style="background:var(--bee-soft)"><span class="tiny" style="color:var(--char)">Each move is hypothetical — even unrealistic ones illustrate the strategy type, exactly as the assignment asks.</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 51 · TOOL: RANKING SIMULATOR ============ -->
+    <section class="slide" data-section="Assignment 10" data-title="Tool — Strategy Ranking Simulator">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool · Exercise 5E</span><h2 class="s-title">Best mix of strategies — ranking simulator</h2></div>
+        <div class="s-num">51 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-rank">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Rank the seven strategies from Exercise 5E by attractiveness (1 = best). Then reveal a model ranking grounded in Chapter 5 and the cohesion case — lower total gap = closer match.</span></div>
+          <div class="toolwrap">
+            <div style="flex:1.25;overflow:auto" id="rank-list"></div>
+            <div class="card" style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;gap:8px"><button class="btn btn--primary" id="rank-reveal">Reveal model ranking</button><button class="btn" id="rank-restart">Reset</button></div>
+              <div id="rank-result" class="tiny" style="margin:0;color:var(--muted)">Use the ▲▼ buttons to order the strategies, then reveal the model ranking and rationale.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 52 · TOOL: MASTERY QUIZ ============ -->
+    <section class="slide" data-section="Wrap-Up" data-title="Tool — Chapter 5 Mastery Quiz">
+      <div class="s-head">
+        <div><span class="kicker">🐝 Interactive tool</span><h2 class="s-title">Chapter 5 Mastery Quiz</h2></div>
+        <div class="s-num">52 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="tool" id="t-quiz">
+          <div class="tool-hint"><span class="badge">tool</span> <span>Twelve questions across every learning objective. Pick an answer for instant feedback, then see your final grade.</span></div>
+          <div class="row" style="align-items:center;gap:12px">
+            <div class="progbar"><i id="quiz-bar"></i></div>
+            <div class="chip chip--bee" id="quiz-score">Score 0 / 0</div>
+          </div>
+          <div class="card fill" style="display:flex;flex-direction:column;gap:11px;overflow:auto">
+            <div id="quiz-q" style="font-size:15.5px;font-weight:700;color:var(--ink);line-height:1.4"></div>
+            <div id="quiz-options" class="col" style="gap:7px"></div>
+            <div id="quiz-feedback"></div>
+            <div style="margin-top:auto;display:flex;justify-content:flex-end;gap:8px">
+              <button class="btn" id="quiz-restart">Restart</button>
+              <button class="btn btn--primary" id="quiz-next" disabled>Next ▸</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 53 · KEY TERMS ============ -->
+    <section class="slide" data-section="Wrap-Up" data-title="Key terms recap">
+      <div class="s-head">
+        <div><span class="kicker">Recap</span><h2 class="s-title">Key terms from Chapter 5</h2>
+        <p class="s-sub">The vocabulary that powers a strategic plan.</p></div>
+        <div class="s-num">53 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid4 fill" style="align-content:start">
+          <div class="card pad-sm"><h4 style="font-size:13px">Integration</h4><p class="tiny" style="margin:0;line-height:1.5">vertical integration · forward integration · backward integration · horizontal integration · de-integration · franchising</p></div>
+          <div class="card pad-sm"><h4 style="font-size:13px">Intensive &amp; growth</h4><p class="tiny" style="margin:0;line-height:1.5">intensive strategies · market penetration · market development · product development · organic growth · blue ocean strategy · first-mover advantages</p></div>
+          <div class="card pad-sm"><h4 style="font-size:13px">Diversification &amp; defensive</h4><p class="tiny" style="margin:0;line-height:1.5">related &amp; unrelated diversification · retrenchment · turnaround · divestiture · liquidation · bankruptcy · combination strategy</p></div>
+          <div class="card pad-sm"><h4 style="font-size:13px">Analysis &amp; means</h4><p class="tiny" style="margin:0;line-height:1.5">value chain &amp; VCA · core / distinctive competence · benchmarking · cost leadership · differentiation · generic strategies · joint venture · merger · acquisition · LBO</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 54 · SUMMARY & REFERENCES ============ -->
+    <section class="slide slide--dark" data-section="Wrap-Up" data-title="Summary &amp; references">
+      <div class="stripes" style="position:absolute;left:0;right:0;top:0"></div>
+      <div class="s-head" style="margin-top:8px">
+        <div><span class="kicker">Wrap-up</span><h2 class="s-title">The strategist's takeaway</h2></div>
+        <div class="s-num" style="color:#cbc3a6">54 / 54</div>
+      </div>
+      <div class="s-body">
+        <div class="grid2 fill">
+          <div class="card card--ink"><h4>What to remember</h4>
+            <ul class="blist tight"><li>Set clear, quantitative objectives before choosing strategies</li><li>Eleven strategy types fall into four families — pick a focused few, not all</li><li>Intensive strategies keep a firm near its core; integration &amp; diversification move it away</li><li>Use value chain analysis &amp; benchmarking to find durable advantage</li><li>Compete on cost or on differentiation — rarely both — and grow by building, borrowing, or buying</li></ul>
+          </div>
+          <div class="col">
+            <div class="card card--bee"><h4>A "strategic plan" is a "game plan"</h4><p style="font-size:13.5px;margin:0;line-height:1.45">Success depends on having a better plan than your rival's. As parity grows, the value of the plan grows exponentially — for Coca-Cola and for any firm.</p></div>
+            <div class="card card--ink"><h4>References</h4><p class="tiny" style="margin:0;color:#cbc3a6;line-height:1.55">David, F. R. &amp; David, F. R. (2022). <i>Strategic Management: Concepts and Cases — A Competitive Advantage Approach</i> (17th ed.). Pearson. · Chapter 5, "Strategies in Action," &amp; the Coca-Cola Company, 2018 cohesion case. · Li, M. (2022). Strategy and financial statement analysis of the Coca-Cola Company. FMET 2022, Atlantis Press.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FOOTER CHROME ============ -->
+    <div class="deck-foot">
+      <div class="foot-left">
+        <span class="foot-brand"><span class="foot-dot"></span>Strategies in Action</span>
+        <span class="foot-sec" id="foot-sec">Intro</span>
+      </div>
+      <div class="foot-right">
+        <button class="navbtn" id="btn-menu" title="All slides (M)">☰</button>
+        <button class="navbtn" id="btn-prev" title="Previous (←)">‹</button>
+        <span class="counter" id="counter">1 / 54</span>
+        <button class="navbtn" id="btn-next" title="Next (→)">›</button>
+      </div>
+    </div>
+
+    <!-- ============ MENU OVERLAY ============ -->
+    <div class="menu" id="menu">
+      <button class="btn mclose" id="menu-close">Close ✕</button>
+      <h2>All slides</h2>
+      <p class="msubtitle">Jump anywhere — sections are listed in order. ● marks an interactive tool.</p>
+      <div class="menu-cols" id="menu-list"></div>
+    </div>
+
+  </div><!-- /deck -->
+</div><!-- /stage -->
+
+<script>
+/* ============ shared helpers ============ */
+function byId(x){return document.getElementById(x);}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function roundRectFill(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);if(r<0)r=0;ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill();}
+function wrapText(ctx,text,cx,y,maxW,lh){var words=String(text).split(' ');var line='';var lines=[];for(var k=0;k<words.length;k++){var t=line?line+' '+words[k]:words[k];if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=words[k];}else{line=t;}}if(line)lines.push(line);ctx.textAlign='center';lines.slice(0,2).forEach(function(ln,i){ctx.fillText(ln,cx,y+i*lh);});}
+function beeBars(canvas,bars,opt){
+  opt=opt||{};
+  var dpr=(window.devicePixelRatio>1)?2:1;
+  var W=opt.w||940,H=opt.h||330;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  var ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  var padL=opt.padL||58,padR=22,padT=22,padB=opt.padB||58;
+  var plotW=W-padL-padR,plotH=H-padT-padB;
+  var vals=bars.map(function(b){return b.value;});
+  var max=Math.max.apply(null,vals.concat([0]));
+  var min=Math.min.apply(null,vals.concat([0]));
+  if(opt.max!=null)max=opt.max;if(opt.min!=null)min=opt.min;
+  if(max>0)max=max*1.12;if(min<0)min=min*1.14;
+  if(max===min)max+=1;
+  var range=max-min;
+  function y(v){return padT+plotH*(1-(v-min)/range);}
+  ctx.strokeStyle='#E8DFC2';ctx.lineWidth=1;ctx.font='11px system-ui,sans-serif';
+  var ticks=opt.ticks||4;
+  for(var i=0;i<=ticks;i++){
+    var v=min+range*i/ticks;var yy=y(v);
+    ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(W-padR,yy);ctx.stroke();
+    ctx.fillStyle='#948B6B';ctx.textAlign='right';
+    ctx.fillText(opt.fmt?opt.fmt(v):String(Math.round(v)),padL-8,yy+3);
+  }
+  var n=bars.length;
+  var gap=(opt.gap!=null)?opt.gap:0.36;
+  var slot=plotW/n;var bw=slot*(1-gap);
+  var y0=y(0);
+  bars.forEach(function(b,i){
+    var cx=padL+slot*(i+0.5);
+    var yv=y(b.value);
+    var top=Math.min(yv,y0),hh=Math.abs(yv-y0);
+    ctx.fillStyle=b.color||'#FCE205';
+    roundRectFill(ctx,cx-bw/2,top,bw,Math.max(hh,2),5);
+    ctx.fillStyle='#15140F';ctx.font='bold 12px system-ui,sans-serif';ctx.textAlign='center';
+    var lbl=(b.label!=null)?b.label:(opt.fmt?opt.fmt(b.value):String(b.value));
+    ctx.fillText(lbl,cx,(b.value>=0)?top-6:y0+15);
+    ctx.fillStyle='#6E664F';ctx.font='11px system-ui,sans-serif';
+    wrapText(ctx,b.name,cx,H-padB+15,slot-6,12);
+  });
+  ctx.strokeStyle='#15140F';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(padL,y0);ctx.lineTo(W-padR,y0);ctx.stroke();
+}
+
+/* ============ deck navigation ============ */
+(function(){
+  var deck=byId('deck');
+  var slides=Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total=slides.length;
+  var cur=0;
+  var counter=byId('counter'),footSec=byId('foot-sec'),progress=byId('progress');
+  var menu=byId('menu'),menuList=byId('menu-list');
+
+  function fit(){var s=Math.min(window.innerWidth/1280,window.innerHeight/720);deck.style.transform='scale('+s+')';}
+  window.addEventListener('resize',fit);fit();
+
+  function go(i){
+    if(i<0)i=0;if(i>total-1)i=total-1;
+    slides[cur].classList.remove('active');
+    cur=i;
+    slides[cur].classList.add('active');
+    counter.textContent=(cur+1)+' / '+total;
+    footSec.textContent=slides[cur].getAttribute('data-section')||'';
+    progress.style.width=((cur+1)/total*100)+'%';
+    menu.classList.remove('open');
+  }
+  byId('btn-next').onclick=function(){go(cur+1);};
+  byId('btn-prev').onclick=function(){go(cur-1);};
+  byId('btn-menu').onclick=function(){menu.classList.toggle('open');};
+  byId('menu-close').onclick=function(){menu.classList.remove('open');};
+
+  (function buildMenu(){
+    var html='';var lastSec=null;
+    slides.forEach(function(sl,idx){
+      var sec=sl.getAttribute('data-section')||'';
+      var title=sl.getAttribute('data-title')||('Slide '+(idx+1));
+      var isTool=title.indexOf('Tool')===0;
+      if(sec!==lastSec){if(lastSec!==null)html+='</div>';html+='<div class="mgroup"><div class="msec">'+sec+'</div>';lastSec=sec;}
+      var num=('0'+(idx+1)).slice(-2);
+      html+='<button class="mitem" data-i="'+idx+'"><b>'+num+'</b>'+title+(isTool?'<span class="tflag">&#9679; tool</span>':'')+'</button>';
+    });
+    if(lastSec!==null)html+='</div>';
+    menuList.innerHTML=html;
+    Array.prototype.slice.call(menuList.querySelectorAll('.mitem')).forEach(function(b){b.onclick=function(){go(parseInt(b.getAttribute('data-i'),10));};});
+  })();
+
+  document.addEventListener('keydown',function(e){
+    var t=e.target;var tag=t&&t.tagName;
+    var typing=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable);
+    if(e.key==='Escape'){menu.classList.remove('open');return;}
+    if((e.key==='m'||e.key==='M')&&!typing){menu.classList.toggle('open');return;}
+    if(menu.classList.contains('open'))return;
+    if(typing)return;
+    if(e.key==='ArrowRight'||e.key==='PageDown'){e.preventDefault();go(cur+1);}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+    else if(e.key===' '){if(tag==='BUTTON')return;e.preventDefault();go(cur+1);}
+    else if(e.key==='Home'){e.preventDefault();go(0);}
+    else if(e.key==='End'){e.preventDefault();go(total-1);}
+  });
+
+  counter.textContent='1 / '+total;
+  footSec.textContent=slides[0].getAttribute('data-section')||'';
+  progress.style.width=(1/total*100)+'%';
+})();
+
+/* ============ Tool 1 · Objectives Quality Checker ============ */
+(function(){
+  var TRAITS=["Quantitative","Understandable","Challenging","Compatible","Obtainable"];
+  var EX=[
+    {label:"Strong objective",verdict:"Excellent — usable for planning.",vClass:"good",
+     s:["ok","ok","ok","ok","ok"],
+     notes:["Has a number: 4% growth","Clear to anyone reading it","A real stretch, yet realistic","Consistent with corporate growth goals","Achievable for a firm Coke's size"],
+     text:"Grow North America revenue 4% per year through 2027"},
+    {label:"Recover 75% of bottles",verdict:"Strong — measurable and on-mission.",vClass:"good",
+     s:["ok","ok","ok","ok","ok"],
+     notes:["75% is measurable","Everyone understands it","Ambitious but reachable","Fits the World Without Waste mission","Realistic with investment"],
+     text:"Recover 75% of bottles and cans in developed markets by 2025"},
+    {label:"Vague (Macy's style)",verdict:"Useless for planning — fails almost every test.",vClass:"bad",
+     s:["no","no","warn","warn","warn"],
+     notes:["No number and no timeline","Too vague to act on","Can't tell if it stretches anyone","Can't check consistency","Trivially counted as met by any result"],
+     text:"Grow sales profitably"},
+    {label:"Inspiring slogan",verdict:"A nice vision, but not a usable objective.",vClass:"bad",
+     s:["no","warn","ok","warn","warn"],
+     notes:["Not measurable","Inspiring but fuzzy","Certainly ambitious","Hard to align daily work to it","Hard to call realistic"],
+     text:"Become the most loved brand in the world"},
+    {label:"Names a strategy, not a goal",verdict:"The exact thing the textbook warns against.",vClass:"bad",
+     s:["no","no","no","no","warn"],
+     notes:["No number","Names a strategy type, not a result","No challenge defined","Nothing to align to","Says nothing concrete"],
+     text:"Do market penetration"}
+  ];
+  var examplesEl=byId('obj-examples'),resultEl=byId('obj-result');
+  function renderResult(ex){
+    var html='<div class="fb '+ex.vClass+'" style="margin-bottom:10px"><b>'+ex.label+': </b>'+ex.verdict+'</div>'+
+      '<div class="tiny" style="margin:0 0 8px;color:var(--char)">Objective tested: <b>"'+ex.text+'"</b></div>';
+    for(var i=0;i<5;i++){
+      var st=ex.s[i];var mark=st==='ok'?'&#10003;':(st==='no'?'&#10007;':'!');
+      html+='<div class="sc-row"><div class="sc-mark '+st+'">'+mark+'</div><div><b>'+TRAITS[i]+'</b><p>'+ex.notes[i]+'</p></div></div>';
+    }
+    resultEl.innerHTML=html;
+  }
+  EX.forEach(function(ex,i){
+    var b=document.createElement('button');b.className='btn btn-sm'+(i===0?' is-active':'');b.textContent=ex.label;
+    b.onclick=function(){Array.prototype.slice.call(examplesEl.children).forEach(function(c,j){c.classList.toggle('is-active',j===i);});renderResult(ex);};
+    examplesEl.appendChild(b);
+  });
+  renderResult(EX[0]);
+
+  var checksEl=byId('obj-checks'),meter=byId('obj-meter'),meterLabel=byId('obj-meter-label');
+  var state=[false,false,false,false,false];
+  function updateMeter(){
+    var n=state.filter(Boolean).length;
+    meter.style.width=(n/5*100)+'%';
+    var msg=n===5?"Strong objective &#128039;":n>=3?"Getting there — keep refining":n>=1?"Still missing key traits":"Toggle the traits your objective meets";
+    meterLabel.innerHTML=n+" of 5 — "+msg;
+  }
+  TRAITS.forEach(function(tr,i){
+    var c=document.createElement('span');c.className='chip tog';c.textContent=tr;
+    c.onclick=function(){state[i]=!state[i];c.classList.toggle('on',state[i]);updateMeter();};
+    checksEl.appendChild(c);
+  });
+  updateMeter();
+})();
+
+/* ============ Tool 2 · Eleven Strategies Explorer ============ */
+(function(){
+  var FAM={Integration:'#D2122E',Intensive:'#1565C0',Diversification:'#2E7D32',Defensive:'#15140F'};
+  var DATA=[
+    {n:1,name:"Forward integration",fam:"Integration",def:"Gaining ownership or control over distributors or retailers to move closer to the end customer.",real:"Nike opens outlet stores and grows Nike.com direct sales 50%.",coke:"Buy all Coke bottlers it does not already own.",guide:["Present distributors are costly, unreliable, or can't keep up","The industry is growing markedly","Distributors enjoy high profit margins worth capturing"]},
+    {n:2,name:"Backward integration",fam:"Integration",def:"Seeking ownership or control of a firm's suppliers.",real:"Starbucks buys a 600-acre coffee farm in Costa Rica.",coke:"Purchase three of its sugar cane and sugar beet suppliers.",guide:["Present suppliers are expensive or unreliable","Suppliers are few while competitors are many","Stable raw-material prices are critically important"]},
+    {n:3,name:"Horizontal integration",fam:"Integration",def:"Gaining ownership or control over competitors — the most common growth strategy.",real:"Walgreens acquires about 2,000 Rite Aid stores.",coke:"Take over Pepsi.",guide:["The firm can gain scale without an antitrust challenge","It competes in a growing industry","Competitors are faltering and can be bought at a discount"]},
+    {n:4,name:"Market penetration",fam:"Intensive",def:"Increasing market share for present products in present markets through greater marketing.",real:"Verizon's multimillion-dollar 'Humanability' campaign.",coke:"A global ad blitz to shift Coke's image from unhealthy to a treat.",guide:["Current markets are not saturated","Customers' usage rate could rise significantly","Sales correlate highly with marketing spend"]},
+    {n:5,name:"Market development",fam:"Intensive",def:"Introducing present products into new geographic areas.",real:"Tesla begins making and selling cars in China.",coke:"Open snack-food branches all over the world.",guide:["New, reliable, quality channels are available","New untapped or unsaturated markets exist","Consumption habits are similar in the new areas"]},
+    {n:6,name:"Product development",fam:"Intensive",def:"Increasing sales by improving or modifying present products — usually heavy R&amp;D.",real:"Kellogg buys RXBAR to move away from sugary cereals.",coke:"Introduce new healthy alternative beverages.",guide:["Products are in the maturity stage of the life cycle","The industry has rapid technological change","The firm has strong R&amp;D capabilities"]},
+    {n:7,name:"Related diversification",fam:"Diversification",def:"Adding new but related products with a strategic fit to the existing value chain.",real:"Disney acquires 21st Century Fox's film and TV studios.",coke:"Introduce tea-based beverages.",guide:["The firm is in a no-growth or slow-growth industry","Related products would lift sales of current products","Related products offset seasonal peaks and valleys"]},
+    {n:8,name:"Unrelated diversification",fam:"Diversification",def:"Building a portfolio of unrelated businesses chosen for financial performance.",real:"CVS acquires insurer Aetna; Amazon enters pharmacy.",coke:"Sell branded stationery products.",guide:["Existing markets for present products are saturated","Channels can carry new products to current customers","The firm has capital and talent for a new industry"]},
+    {n:9,name:"Retrenchment",fam:"Defensive",def:"Regrouping through cost and asset reduction to reverse declining sales and profits.",real:"Eli Lilly cuts 8% of staff and redirects savings to R&amp;D.",coke:"Close down Coca-Cola operations in Asia.",guide:["The firm is plagued by inefficiency and low profits","It failed to use strengths or fix weaknesses over time","It grew so fast that reorganization is needed"]},
+    {n:10,name:"Divestiture",fam:"Defensive",def:"Selling a division or part of an organization, often to refocus on the core.",real:"Nestle divests its U.S. chocolate business to Ferrero.",coke:"Sell Dasani.",guide:["Retrenchment failed to deliver improvements","A division causes the firm's poor performance","A large amount of cash is needed quickly"]},
+    {n:11,name:"Liquidation",fam:"Defensive",def:"Selling all of a company's assets, in parts, for their tangible worth.",real:"Toys 'R' Us liquidates 885 U.S. stores.",coke:"Sell Coke's secret formula and recipe.",guide:["Both retrenchment and divestiture failed","Stockholders can minimize losses by selling assets"]}
+  ];
+  var grid=byId('eleven-grid'),detail=byId('eleven-detail');var sel=0;
+  function renderDetail(i){
+    var s=DATA[i];
+    detail.innerHTML='<span class="chip" style="background:'+FAM[s.fam]+';color:#fff;border-color:transparent">'+s.fam+' strategy</span>'+
+      '<h4 style="margin:8px 0 4px;font-size:16px">'+s.n+'. '+s.name+'</h4>'+
+      '<p style="font-size:13.5px;margin:0 0 9px;line-height:1.42">'+s.def+'</p>'+
+      '<div class="card pad-sm" style="margin-bottom:8px"><b style="font-size:11.5px;letter-spacing:.04em;color:var(--soft)">REAL EXAMPLE</b><div style="font-size:13px;margin-top:2px">'+s.real+'</div></div>'+
+      '<div class="card card--bee pad-sm" style="margin-bottom:9px"><b style="font-size:11.5px;letter-spacing:.04em;color:var(--char)">HYPOTHETICAL COCA-COLA MOVE</b><div style="font-size:13px;margin-top:2px">'+s.coke+'</div></div>'+
+      '<b style="font-size:12px;color:var(--ink)">Works best when&hellip;</b>'+
+      '<ul class="blist tight" style="margin-top:6px">'+s.guide.map(function(g){return '<li>'+g+'</li>';}).join('')+'</ul>';
+  }
+  DATA.forEach(function(s,i){
+    var b=document.createElement('button');b.className='xcard'+(i===0?' sel':'');b.style.borderLeft='5px solid '+FAM[s.fam];
+    b.innerHTML='<span class="xt">'+s.n+'. '+s.name+'</span><span class="xc">'+s.fam+'</span>';
+    b.onclick=function(){sel=i;Array.prototype.slice.call(grid.children).forEach(function(c,j){c.classList.toggle('sel',j===i);});renderDetail(i);};
+    grid.appendChild(b);
+  });
+  renderDetail(0);
+})();
+
+/* ============ Tool 3 · Strategy Classifier Game ============ */
+(function(){
+  var DATA=[
+    {q:"Coca-Cola buys the independent bottlers that distribute its drinks to stores.",answer:"Forward integration",options:["Forward integration","Backward integration","Market penetration","Product development"],explain:"Owning distributors moves Coke closer to the customer — that is forward integration."},
+    {q:"Coca-Cola purchases a sugarcane farm to control its own sweetener supply.",answer:"Backward integration",options:["Backward integration","Forward integration","Related diversification","Liquidation"],explain:"Gaining control of a supplier is backward integration."},
+    {q:"Coca-Cola acquires rival Dr Pepper Snapple.",answer:"Horizontal integration",options:["Horizontal integration","Unrelated diversification","Market development","Retrenchment"],explain:"Buying a competitor is horizontal integration."},
+    {q:"Coca-Cola spends $4 billion on a global ad campaign to sell more Coke in its current markets.",answer:"Market penetration",options:["Market penetration","Market development","Product development","Divestiture"],explain:"More marketing to gain share for present products in present markets is market penetration."},
+    {q:"Coca-Cola builds its first bottling plant in a new African country.",answer:"Market development",options:["Market development","Market penetration","Forward integration","Backward integration"],explain:"Taking present products into a new geographic area is market development."},
+    {q:"Coca-Cola reformulates an existing drink and launches a new zero-sugar version.",answer:"Product development",options:["Product development","Related diversification","Market penetration","Horizontal integration"],explain:"Improving or modifying present products is product development."},
+    {q:"Coca-Cola launches a line of bottled teas, closely related to its beverage business.",answer:"Related diversification",options:["Related diversification","Unrelated diversification","Product development","Market development"],explain:"Adding new but related products is related diversification."},
+    {q:"Coca-Cola acquires a construction company to build its own facilities.",answer:"Unrelated diversification",options:["Unrelated diversification","Related diversification","Backward integration","Forward integration"],explain:"Adding a new, unrelated product line is unrelated diversification."},
+    {q:"Coca-Cola lays off 8% of staff and closes obsolete plants to cut costs.",answer:"Retrenchment",options:["Retrenchment","Divestiture","Liquidation","Market penetration"],explain:"Cutting costs and assets to reverse declines is retrenchment (a turnaround)."},
+    {q:"Coca-Cola sells its Dasani water division to raise cash and refocus.",answer:"Divestiture",options:["Divestiture","Liquidation","Retrenchment","Unrelated diversification"],explain:"Selling one division or part of the firm is divestiture."},
+    {q:"Coca-Cola sells off all of its assets piece by piece and ceases to exist.",answer:"Liquidation",options:["Liquidation","Divestiture","Retrenchment","Horizontal integration"],explain:"Selling all assets in parts for their tangible worth is liquidation."}
+  ];
+  var bar=byId('classify-bar'),scoreEl=byId('classify-score'),scn=byId('classify-scenario'),
+      opts=byId('classify-options'),fb=byId('classify-feedback'),nextB=byId('classify-next'),restartB=byId('classify-restart');
+  var order=[],idx=0,score=0,answered=false;
+  function start(){order=shuffle(DATA.map(function(_,i){return i;}));idx=0;score=0;render();}
+  function render(){
+    answered=false;nextB.disabled=true;fb.innerHTML='';fb.className='';
+    var q=DATA[order[idx]];
+    scn.textContent=(idx+1)+'. '+q.q;
+    scoreEl.textContent='Score '+score+' / '+idx;
+    bar.style.width=(idx/DATA.length*100)+'%';
+    opts.innerHTML='';
+    shuffle(q.options).forEach(function(c){
+      var b=document.createElement('button');b.className='opt';b.textContent=c;
+      b.onclick=function(){pick(b,c,q);};opts.appendChild(b);
+    });
+    nextB.textContent=(idx===DATA.length-1)?'See result':'Next \u25B8';
+  }
+  function pick(b,c,q){
+    if(answered)return;answered=true;
+    var correct=(c===q.answer);if(correct)score++;
+    Array.prototype.slice.call(opts.children).forEach(function(ch){
+      ch.disabled=true;
+      if(ch.textContent===q.answer)ch.classList.add('correct');
+      else if(ch===b)ch.classList.add('wrong');else ch.classList.add('dim');
+    });
+    fb.className='fb '+(correct?'good':'bad');
+    fb.innerHTML='<b>'+(correct?'Correct! ':'Not quite. ')+'</b>'+q.explain;
+    scoreEl.textContent='Score '+score+' / '+(idx+1);
+    nextB.disabled=false;
+  }
+  function next(){if(idx<DATA.length-1){idx++;render();}else{finish();}}
+  function finish(){
+    bar.style.width='100%';var pct=Math.round(score/DATA.length*100);
+    scn.textContent='All 11 rounds complete!';opts.innerHTML='';nextB.disabled=true;
+    var grade=pct>=90?'Outstanding strategist! &#128039;':pct>=70?'Solid command of the strategy types.':pct>=50?'Getting there — review the definitions.':'Revisit the eleven strategies and try again.';
+    fb.className='fb good';fb.innerHTML='<b>You scored '+score+' / '+DATA.length+' ('+pct+'%).</b> '+grade;
+  }
+  nextB.onclick=next;restartB.onclick=start;start();
+})();
+
+/* ============ Tool 4 · Strategy Ranking Simulator (5E) ============ */
+(function(){
+  var items=[
+    {t:"Forward integration",d:"Build 100 Coca-Cola stores",e:6,why:"The textbook says Coke opening its own brick-and-mortar stores would be excessively costly and divert it from beverages."},
+    {t:"Backward integration",d:"Buy a 10,000-acre sugarcane farm",e:5,why:"Owning sugar supply moves Coke away from its beverage core, and vertical integration carries large fixed costs."},
+    {t:"Horizontal integration",d:"Acquire four Dr Pepper Snapple brands",e:4,why:"A common growth move with real economies of scale, but it needs heavy capital and invites antitrust scrutiny."},
+    {t:"Market development",d:"Build a manufacturing plant in Africa",e:3,why:"Sticks to the core and taps unsaturated markets; global expansion is Coke's #1 future strategy."},
+    {t:"Market penetration",d:"Launch a global healthy-image ad campaign",e:2,why:"Stays in the core, sales track marketing spend, and shifting perception is a stated case priority."},
+    {t:"Product development",d:"Launch a full line of organic juices",e:1,why:"Closest to Coke's core competency and aligned with the case's call for new healthy drinks and the industry's health trend."},
+    {t:"Unrelated diversification",d:"Acquire a construction company",e:7,why:"Far from the beverage core; diversification is on the retreat and shareholders can diversify themselves."}
+  ];
+  var order=items.map(function(_,i){return i;});
+  var listEl=byId('rank-list'),resEl=byId('rank-result');var revealed=false;
+  function render(){
+    listEl.innerHTML='';
+    order.forEach(function(it,pos){
+      var item=items[it];var row=document.createElement('div');row.className='rankrow';
+      var delta='';
+      if(revealed){var g=Math.abs((pos+1)-item.e);var col=g===0?'#2E7D32':(g<=1?'#9a7d00':'#C62828');var bg=g===0?'#E7F4E8':'#FBE9E9';delta='<span class="rdelta" style="background:'+bg+';color:'+col+'">gap '+g+'</span>';}
+      row.innerHTML='<div class="rk">'+(pos+1)+'</div><div class="rl"><b>'+item.t+'</b><br>'+item.d+'</div>'+delta+'<div class="rmove"><button data-u="'+pos+'">&#9650;</button><button data-d="'+pos+'">&#9660;</button></div>';
+      listEl.appendChild(row);
+    });
+    Array.prototype.slice.call(listEl.querySelectorAll('[data-u]')).forEach(function(b){b.onclick=function(){move(parseInt(b.getAttribute('data-u'),10),-1);};});
+    Array.prototype.slice.call(listEl.querySelectorAll('[data-d]')).forEach(function(b){b.onclick=function(){move(parseInt(b.getAttribute('data-d'),10),1);};});
+  }
+  function move(pos,dir){var np=pos+dir;if(np<0||np>=order.length)return;var tmp=order[pos];order[pos]=order[np];order[np]=tmp;revealed=false;resEl.style.color='var(--muted)';resEl.innerHTML='Order changed — reveal again to score.';render();}
+  function reveal(){
+    revealed=true;var total=0;order.forEach(function(it,pos){total+=Math.abs((pos+1)-items[it].e);});
+    var expertOrder=items.map(function(it){return it;}).sort(function(a,b){return a.e-b.e;});
+    var head=(total===0)?'&mdash; perfect match with the model ranking! &#128039;':(total<=6)?'&mdash; very close to the model.':(total<=12)?'&mdash; a reasonable mix.':'&mdash; quite different; see the rationale.';
+    var html='<b>Total gap: '+total+'</b> '+head+'<div style="height:8px"></div><div style="font-weight:800;color:var(--ink);margin-bottom:5px">Model ranking &amp; rationale</div>';
+    expertOrder.forEach(function(it){html+='<div style="margin-bottom:7px;font-size:12.5px;line-height:1.35"><b style="color:var(--ink)">'+it.e+'. '+it.t+'</b> &mdash; '+it.why+'</div>';});
+    html+='<div class="tiny" style="margin-top:6px">This model ranking is grounded in Chapter 5 and the cohesion case; your professor\u2019s official expert ranking may differ.</div>';
+    resEl.style.color='var(--text)';resEl.innerHTML=html;render();
+  }
+  byId('rank-reveal').onclick=reveal;
+  byId('rank-restart').onclick=function(){order=items.map(function(_,i){return i;});revealed=false;resEl.style.color='var(--muted)';resEl.innerHTML='Use the \u25B2\u25BC buttons to order the strategies, then reveal the model ranking and rationale.';render();};
+  render();
+})();
+
+/* ============ Tool 5 · Value Chain Explorer ============ */
+(function(){
+  var SEG=[
+    {icon:'🌾',name:'Supplier',act:['Raw materials','Fuel &amp; energy','Transportation','Component parts','Inspection','Storing'],coke:"Coke makes its own syrup concentrate, then sources water, sweeteners (cane &amp; beet sugar, HFCS), CO2, aluminum and PET from suppliers."},
+    {icon:'🏭',name:'Production',act:['Warehouse','Inventory system','Plant layout','Maintenance','R&amp;D','Cost accounting'],coke:"Producing syrup concentrate is Coke's core. Independent bottlers handle the actual bottling under exclusive territories — a model used since 1889."},
+    {icon:'🚚',name:'Distribution',act:['Loading','Shipping','Trucking','Railroads','Fuel','Maintenance'],coke:"A franchised bottler network moves product worldwide. Five large bottlers, led by Coca-Cola FEMSA, supply 39% of Coke's needs."},
+    {icon:'📣',name:'Sales &amp; marketing',act:['Salespersons','Website','Publicity','Promotion','Advertising','Internet'],coke:"Coke spends about $4 billion a year on advertising; the brand has been built since the iconic 1931 Santa Claus campaign."},
+    {icon:'🤝',name:'Customer service',act:['Warranty','Postage','Phone','Internet support'],coke:"Vending and retail relationships matter enormously — impulse buying is roughly 30% of all beverage sales."},
+    {icon:'🏢',name:'Management',act:['Human resources','Administration','Employee benefits','Labor relations','Finance &amp; legal'],coke:"Run from Atlanta across five operating segments with about 100,300 employees."}
+  ];
+  var chain=byId('vca-chain'),detail=byId('vca-detail');var sel=0;
+  function renderDetail(i){
+    var s=SEG[i];
+    detail.innerHTML='<h4 style="margin:0 0 4px;font-size:16px">'+s.icon+' '+s.name+' costs</h4>'+
+      '<b style="font-size:11.5px;letter-spacing:.04em;color:var(--soft)">COST ACTIVITIES IN THIS LINK</b>'+
+      '<div class="chiprow" style="margin:6px 0 11px">'+s.act.map(function(a){return '<span class="chip">'+a+'</span>';}).join('')+'</div>'+
+      '<div class="card card--bee pad-sm"><b style="font-size:11.5px;letter-spacing:.04em;color:var(--char)">HOW IT WORKS FOR COCA-COLA</b><div style="font-size:13.5px;margin-top:3px;line-height:1.45">'+s.coke+'</div></div>';
+  }
+  SEG.forEach(function(s,i){
+    var seg=document.createElement('button');seg.type='button';seg.className='vcseg'+(i===0?' sel':'');
+    seg.innerHTML='<div class="vi">'+s.icon+'</div><div class="vn">'+s.name+'</div>';
+    seg.onclick=function(){sel=i;Array.prototype.slice.call(chain.children).forEach(function(c,j){c.classList.toggle('sel',j===i);});renderDetail(i);};
+    chain.appendChild(seg);
+  });
+  renderDetail(0);
+})();
+
+/* ============ Tool 6 · Porter's Generic Strategy Matrix ============ */
+(function(){
+  var CELLS=[
+    {type:"Type 1",breadth:"Broad market",base:"Cost leadership",desc:"Standardized products at the lowest price for a wide range of price-sensitive customers.",companies:["Walmart","Amazon"],risk:"Rivals copy the low-cost methods, or simple price cuts erode the firm's margins."},
+    {type:"Type 3",breadth:"Broad market",base:"Differentiation",desc:"Unique, valued products for a wide audience willing to pay more than for rivals.",companies:["Apple","BMW","Monster"],risk:"Customers may not value the uniqueness enough, or rivals quickly copy the features."},
+    {type:"Type 2",breadth:"Narrow market",base:"Cost leadership",desc:"Lowest prices for a small, focused set of customers.",companies:["Dollar General","Jiffy Lube","Little Caesars","Spirit Airlines"],risk:"A technological breakthrough can wipe out the cost edge."},
+    {type:"Type 4",breadth:"Narrow market",base:"Differentiation",desc:"Unique products for a small, premium audience that is highly price-insensitive.",companies:["Rolex","Louis Vuitton","Maserati"],risk:"Few buyers and high cost; the uniqueness must be hard to imitate."}
+  ];
+  var grid=byId('porter-grid'),detail=byId('porter-detail');
+  var defaultDetail='<h4 style="margin:0 0 4px;font-size:15px">Where does Coca-Cola fit?</h4><p style="font-size:13.5px;margin:0;line-height:1.45">Coca-Cola is a <b>broad-market</b> brand. The textbook describes premium rivals like Apple, BMW and Monster as differentiating by adding perceived value <b>over Coca-Cola</b> at higher prices. Coke competes on mass-market brand strength and scale rather than premium pricing.</p><p class="tiny" style="margin:9px 0 0">Tap any quadrant to explore it.</p>';
+  function renderDetail(c){
+    detail.innerHTML='<span class="chip chip--bee">'+c.type+'</span> <span class="chip">'+c.breadth+'</span> <span class="chip">'+c.base+'</span>'+
+      '<p style="font-size:13.5px;margin:10px 0 9px;line-height:1.45">'+c.desc+'</p>'+
+      '<b style="font-size:11.5px;letter-spacing:.04em;color:var(--soft)">EXAMPLE FIRMS</b><div class="chiprow" style="margin:5px 0 11px">'+c.companies.map(function(x){return '<span class="chip">'+x+'</span>';}).join('')+'</div>'+
+      '<div class="card card--ink pad-sm"><b style="font-size:11.5px;letter-spacing:.04em;color:var(--bee)">KEY RISK</b><div style="font-size:13px;margin-top:2px;color:var(--bee-pale)">'+c.risk+'</div></div>';
+  }
+  function cellEl(c){
+    var d=document.createElement('button');d.type='button';d.className='pcell';
+    d.innerHTML='<div class="ptype">'+c.type+'</div><div class="pcos">'+c.base+'</div><div class="pco">'+c.companies.map(function(x){return '<span class="chip">'+x+'</span>';}).join('')+'</div>';
+    d.onclick=function(){Array.prototype.slice.call(grid.querySelectorAll('.pcell')).forEach(function(p){p.classList.remove('sel');});d.classList.add('sel');renderDetail(c);};
+    return d;
+  }
+  grid.innerHTML='';
+  var corner=document.createElement('div');corner.className='pcorner';grid.appendChild(corner);
+  var h1=document.createElement('div');h1.className='phead';h1.textContent='Cost leadership';grid.appendChild(h1);
+  var h2=document.createElement('div');h2.className='phead';h2.textContent='Differentiation';grid.appendChild(h2);
+  var s1=document.createElement('div');s1.className='pside';s1.textContent='Broad market';grid.appendChild(s1);
+  grid.appendChild(cellEl(CELLS[0]));grid.appendChild(cellEl(CELLS[1]));
+  var s2=document.createElement('div');s2.className='pside';s2.textContent='Narrow market';grid.appendChild(s2);
+  grid.appendChild(cellEl(CELLS[2]));grid.appendChild(cellEl(CELLS[3]));
+  detail.innerHTML=defaultDetail;
+})();
+
+/* ============ Tool 7 · Build · Borrow · Buy Decision Coach ============ */
+(function(){
+  var DATA=[
+    {q:"Coca-Cola wants to enter a foreign market and needs local management to reduce the risk of expropriation and government harassment.",answer:"Borrow",explain:"A joint venture with a local firm provides local management and lowers political risk — that is borrowing."},
+    {q:"Coca-Cola wants to develop a new healthy drink using its own R&D team and existing staff.",answer:"Build",explain:"Growing internally with existing resources is building (organic growth)."},
+    {q:"Coca-Cola wants to immediately gain a rival's market share and brand portfolio.",answer:"Buy",explain:"Acquiring a competitor for its share and brands is buying (M&amp;A)."},
+    {q:"Coca-Cola wants to create a brand-new beverage category that no rival currently occupies.",answer:"Build",explain:"Pursuing uncontested 'blue ocean' market space is built from within."},
+    {q:"Two smaller beverage firms want to compete against a giant rival without fully merging.",answer:"Borrow",explain:"A strategic alliance lets firms combine strengths without merging — that is borrowing."},
+    {q:"Coca-Cola finds an undervalued, financially distressed firm with high-growth potential and buys it cheaply.",answer:"Buy",explain:"Acquiring undervalued or distressed firms to resell high is a buy strategy, often used by private equity."}
+  ];
+  var MEANS=["Build","Borrow","Buy"];
+  var bar=byId('bbb-bar'),scoreEl=byId('bbb-score'),scn=byId('bbb-scenario'),
+      opts=byId('bbb-options'),fb=byId('bbb-feedback'),nextB=byId('bbb-next'),restartB=byId('bbb-restart');
+  var order=[],idx=0,score=0,answered=false;
+  function start(){order=shuffle(DATA.map(function(_,i){return i;}));idx=0;score=0;render();}
+  function render(){
+    answered=false;nextB.disabled=true;fb.innerHTML='';fb.className='';
+    var q=DATA[order[idx]];
+    scn.textContent=(idx+1)+'. '+q.q;
+    scoreEl.textContent='Score '+score+' / '+idx;
+    bar.style.width=(idx/DATA.length*100)+'%';
+    opts.innerHTML='';
+    MEANS.forEach(function(c){var b=document.createElement('button');b.className='opt';b.style.textAlign='center';b.textContent=c;b.onclick=function(){pick(b,c,q);};opts.appendChild(b);});
+    nextB.textContent=(idx===DATA.length-1)?'See result':'Next \u25B8';
+  }
+  function pick(b,c,q){
+    if(answered)return;answered=true;var correct=(c===q.answer);if(correct)score++;
+    Array.prototype.slice.call(opts.children).forEach(function(ch){ch.disabled=true;if(ch.textContent===q.answer)ch.classList.add('correct');else if(ch===b)ch.classList.add('wrong');else ch.classList.add('dim');});
+    fb.className='fb '+(correct?'good':'bad');fb.innerHTML='<b>'+(correct?'Correct! ':'Not quite. ')+'</b>'+q.explain;
+    scoreEl.textContent='Score '+score+' / '+(idx+1);nextB.disabled=false;
+  }
+  function next(){if(idx<DATA.length-1){idx++;render();}else{finish();}}
+  function finish(){
+    bar.style.width='100%';var pct=Math.round(score/DATA.length*100);scn.textContent='All scenarios complete!';opts.innerHTML='';nextB.disabled=true;
+    var grade=pct>=80?'You have the build-borrow-buy logic down. &#128039;':pct>=50?'Good — review the three means.':'Revisit build, borrow, and buy and try again.';
+    fb.className='fb good';fb.innerHTML='<b>You scored '+score+' / '+DATA.length+' ('+pct+'%).</b> '+grade;
+  }
+  nextB.onclick=next;restartB.onclick=start;start();
+})();
+
+/* ============ Tool 8 · Coca-Cola Financial Dashboard ============ */
+(function(){
+  var usd=function(v){return (v<0?'-':'')+'$'+(Math.abs(v)/1000).toFixed(1)+'B';};
+  var views=[
+    {name:'Revenue & profit',note:'Revenue fell 15% and net income fell 81% from 2016 to 2017 — declines the cohesion case calls alarming.',
+     fmt:usd,bars:[{name:'Revenue 2016',value:41863,color:'#F2B600'},{name:'Revenue 2017',value:35410,color:'#FCE205'},{name:'Net income 2016',value:6527,color:'#F2B600'},{name:'Net income 2017',value:1248,color:'#FCE205'}]},
+    {name:'Revenue by segment',note:'North America generates 29.9% of revenue. Bottling Investments revenue dropped sharply in 2017.',
+     fmt:usd,bars:[{name:'EMEA',value:7374},{name:'Latin America',value:4029},{name:'North America',value:10637,color:'#D2122E'},{name:'Asia Pacific',value:5176},{name:'Bottling Inv.',value:10605}]},
+    {name:'Operating income by segment',note:'Only Latin America grew operating income in 2017; Bottling Investments and Corporate ran losses.',
+     fmt:usd,bars:[{name:'EMEA',value:3646},{name:'Latin America',value:2214,color:'#D2122E'},{name:'North America',value:2578},{name:'Asia Pacific',value:2163},{name:'Bottling Inv.',value:-1117},{name:'Corporate',value:-1983}]}
+  ];
+  var tabs=byId('fin-tabs'),cv=byId('fin-canvas'),note=byId('fin-note');var active=0;
+  function draw(){var v=views[active];beeBars(cv,v.bars,{w:940,h:322,fmt:v.fmt});note.textContent=v.note;}
+  views.forEach(function(v,i){var b=document.createElement('button');b.className='btn btn-sm'+(i===0?' is-active':'');b.textContent=v.name;b.onclick=function(){active=i;Array.prototype.slice.call(tabs.children).forEach(function(c,j){c.classList.toggle('is-active',j===i);});draw();};tabs.appendChild(b);});
+  draw();
+})();
+
+/* ============ Tool 9 · Beverage Industry Trend Visualizer ============ */
+(function(){
+  var cat={fmt:function(v){return v.toFixed(1)+'%';},
+    bars:[{name:'Flavored & Enhanced Water',value:12.3},{name:'Ready-to-Drink Coffee',value:11.0},{name:'Bottled Water',value:8.6},{name:'Energy Drinks',value:4.8},{name:'Sports Drinks',value:3.9},{name:'Ready-to-Drink Tea',value:3.1},{name:'Carbonated Soft Drinks',value:-0.8,color:'#D2122E'},{name:'Fruit Drinks',value:-1.4,color:'#D2122E'}],
+    note:'Healthier options — water and coffee — are booming, while carbonated soft drinks and fruit drinks decline. This is exactly why the case pushes Coke toward water and healthy drinks.'};
+  var metrics=[
+    {name:'Market cap',fmt:function(v){return '$'+v+'B';},vals:[197,17,167]},
+    {name:'Revenue',fmt:function(v){return '$'+v.toFixed(1)+'B';},vals:[41.8,6.6,63.5]},
+    {name:'Employees',fmt:function(v){return v+'k';},vals:[100.3,20,264]},
+    {name:'Operating margin',fmt:function(v){return v.toFixed(1)+'%';},vals:[24.1,20.7,16.4]}
+  ];
+  var firms=['Coca-Cola','Dr Pepper','PepsiCo'],firmColors=['#D2122E','#F2B600','#FCE205'];
+  var tabs=byId('trend-tabs'),mrow=byId('trend-metrics'),cv=byId('trend-canvas'),note=byId('trend-note');
+  var tab=0,mi=0;
+  function drawCat(){beeBars(cv,cat.bars,{w:940,h:306,fmt:cat.fmt});note.textContent=cat.note;}
+  function drawRivals(){var m=metrics[mi];var bars=firms.map(function(f,i){return{name:f,value:m.vals[i],color:firmColors[i]};});beeBars(cv,bars,{w:940,h:306,fmt:m.fmt,gap:0.5});note.textContent='Comparing Coca-Cola, Dr Pepper Snapple and PepsiCo on '+m.name.toLowerCase()+'. Coke leads on market cap and operating margin; PepsiCo leads on revenue and employees.';}
+  function draw(){if(tab===0){mrow.style.display='none';drawCat();}else{mrow.style.display='flex';drawRivals();}}
+  ['Category growth','Coke vs. rivals'].forEach(function(t,i){var b=document.createElement('button');b.className='btn btn-sm'+(i===0?' is-active':'');b.textContent=t;b.onclick=function(){tab=i;Array.prototype.slice.call(tabs.children).forEach(function(c,j){c.classList.toggle('is-active',j===i);});draw();};tabs.appendChild(b);});
+  metrics.forEach(function(m,i){var b=document.createElement('button');b.className='btn btn-sm'+(i===0?' is-active':'');b.textContent=m.name;b.onclick=function(){mi=i;Array.prototype.slice.call(mrow.children).forEach(function(c,j){c.classList.toggle('is-active',j===i);});drawRivals();};mrow.appendChild(b);});
+  draw();
+})();
+
+/* ============ Tool 10 · Chapter 5 Mastery Quiz ============ */
+(function(){
+  var DATA=[
+    {q:"Which is NOT one of the five characteristics of a good objective?",options:["Quantitative","Understandable","Profitable","Obtainable"],a:2,explain:"The five are quantitative, understandable, challenging, compatible, and obtainable."},
+    {q:"\u201CManaging by extrapolation\u201D means:",options:["Reacting to the latest crisis","If it ain't broke, don't fix it","Hoping things improve next time","Having no plan at all"],a:1,explain:"Extrapolation keeps doing the same things the same way because they seem to be going well."},
+    {q:"Coca-Cola buying its bottlers is an example of:",options:["Backward integration","Forward integration","Market development","Retrenchment"],a:1,explain:"Owning distributors moves the firm closer to the customer — forward integration."},
+    {q:"Seeking ownership or control of your suppliers is:",options:["Forward integration","Horizontal integration","Backward integration","Divestiture"],a:2,explain:"Controlling suppliers is backward integration."},
+    {q:"Introducing present products into new geographic areas is:",options:["Market penetration","Market development","Product development","Diversification"],a:1,explain:"New geographic areas for present products is market development."},
+    {q:"Which correctly pairs a strategy with its family?",options:["Retrenchment = intensive","Product development = defensive","Horizontal integration = integration","Related diversification = defensive"],a:2,explain:"Horizontal integration is one of the three integration strategies."},
+    {q:"A core competence that becomes a major competitive advantage is called:",options:["A value chain","A distinctive competence","A benchmark","A blue ocean"],a:1,explain:"When a core competence becomes a major advantage, it is a distinctive competence."},
+    {q:"Porter's two generic strategies are:",options:["Growth and defense","Cost leadership and differentiation","Build and buy","Related and unrelated"],a:1,explain:"Porter's two bases of advantage are cost leadership and differentiation."},
+    {q:"A blue ocean strategy targets:",options:["A crowded, price-competitive market","A new market with no competition yet","A rival to acquire","A division to divest"],a:1,explain:"A blue ocean is uncontested market space where competition is not yet present."},
+    {q:"A leveraged buyout (LBO):",options:["Merges two firms of equal size","Uses borrowed funds to take a public firm private","Is a type of joint venture","Sells all assets in parts"],a:1,explain:"An LBO uses borrowed funds to buy out shareholders, converting a public firm to private."},
+    {q:"Nonprofits differ from for-profits mainly because they:",options:["Have no customers or suppliers","Don't pay taxes and have no shareholders for capital","Never compete with anyone","Cannot do strategic planning"],a:1,explain:"The two key differences: nonprofits don't pay taxes and have no shareholders providing capital."},
+    {q:"Value chain analysis is best described as determining the:",options:["Stock price of rivals","Value (price minus cost) of each activity in making a product","Number of competitors","Mission statement"],a:1,explain:"VCA finds the value — price minus cost — of every activity from raw materials to marketing."}
+  ];
+  var bar=byId('quiz-bar'),scoreEl=byId('quiz-score'),qEl=byId('quiz-q'),opts=byId('quiz-options'),fb=byId('quiz-feedback'),nextB=byId('quiz-next'),restartB=byId('quiz-restart');
+  var order=[],idx=0,score=0,answered=false;
+  function start(){order=shuffle(DATA.map(function(_,i){return i;}));idx=0;score=0;render();}
+  function render(){
+    answered=false;nextB.disabled=true;fb.innerHTML='';fb.className='';
+    var q=DATA[order[idx]];var ans=q.options[q.a];
+    qEl.textContent=(idx+1)+'. '+q.q;scoreEl.textContent='Score '+score+' / '+idx;bar.style.width=(idx/DATA.length*100)+'%';
+    opts.innerHTML='';
+    shuffle(q.options).forEach(function(c){var b=document.createElement('button');b.className='opt';b.textContent=c;b.onclick=function(){pick(b,c,ans,q);};opts.appendChild(b);});
+    nextB.textContent=(idx===DATA.length-1)?'See result':'Next \u25B8';
+  }
+  function pick(b,c,ans,q){
+    if(answered)return;answered=true;var correct=(c===ans);if(correct)score++;
+    Array.prototype.slice.call(opts.children).forEach(function(ch){ch.disabled=true;if(ch.textContent===ans)ch.classList.add('correct');else if(ch===b)ch.classList.add('wrong');else ch.classList.add('dim');});
+    fb.className='fb '+(correct?'good':'bad');fb.innerHTML='<b>'+(correct?'Correct! ':'Not quite. ')+'</b>'+q.explain;
+    scoreEl.textContent='Score '+score+' / '+(idx+1);nextB.disabled=false;
+  }
+  function next(){if(idx<DATA.length-1){idx++;render();}else{finish();}}
+  function finish(){
+    bar.style.width='100%';var pct=Math.round(score/DATA.length*100);
+    qEl.textContent='Quiz complete — Chapter 5 mastered?';opts.innerHTML='';nextB.disabled=true;
+    var grade=pct>=90?'Outstanding — you have mastered Chapter 5! &#128039;':pct>=75?'Great work — strong command of the material.':pct>=50?'Good start — review the weaker areas.':'Keep studying the chapter and try again.';
+    fb.className='fb good';fb.innerHTML='<b>You scored '+score+' / '+DATA.length+' ('+pct+'%).</b> '+grade;
+  }
+  nextB.onclick=next;restartB.onclick=start;start();
+})();
+</script>
+</body>
+</html>
